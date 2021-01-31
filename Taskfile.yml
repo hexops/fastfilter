@@ -1,0 +1,15 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Run tests, add Git commit hook
+    cmds:
+      - git config core.hooksPath hooks
+  lint:
+    desc: Lint code
+    cmds:
+      - zig fmt --check .
+  test:
+    desc: Test code
+    cmds:
+      - zig build test
