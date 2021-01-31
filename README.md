@@ -1,6 +1,6 @@
-# zxorfilters - Zig implementation of Xor Filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+# xorfilter: Zig implementation of Xor Filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
-[![CI](https://github.com/hexops/zxorfilters/workflows/CI/badge.svg)](https://github.com/hexops/zxorfilters/actions)
+[![CI](https://github.com/hexops/xorfilter/workflows/CI/badge.svg)](https://github.com/hexops/xorfilter/actions)
 
 This is an idiomatic Zig implementation of Xor Filters:
 
