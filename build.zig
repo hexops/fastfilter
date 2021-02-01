@@ -6,6 +6,9 @@ pub fn build(b: *Builder) void {
     lib.setBuildMode(mode);
     lib.install();
 
+    var main_tests = b.addTest("src/main.zig");
+    main_tests.setBuildMode(mode);
+
     var fusefilter_tests = b.addTest("src/fusefilter.zig");
     fusefilter_tests.setBuildMode(mode);
 
@@ -16,6 +19,7 @@ pub fn build(b: *Builder) void {
     util_tests.setBuildMode(mode);
 
     const test_step = b.step("test", "Run library tests");
+    test_step.dependOn(&main_tests.step);
     test_step.dependOn(&fusefilter_tests.step);
     test_step.dependOn(&xorfilter_tests.step);
     test_step.dependOn(&util_tests.step);

@@ -10,12 +10,12 @@ const XOR_MAX_ITERATIONS = 100;
 /// Xor8 is the recommended default, no more than a 0.3% false-positive probability.
 ///
 /// See `Xor` for more details.
-const Xor8 = Xor(u8);
+pub const Xor8 = Xor(u8);
 
 /// Xor16 provides a xor filter with 16-bit fingerprints.
 ///
 /// See `Xor` for more details.
-const Xor16 = Xor(u16);
+pub const Xor16 = Xor(u16);
 
 /// Xor returns a xor filter with the specified base type, usually u8 or u16, for which the
 /// helpers Xor8 and Xor16 may be used.
@@ -25,7 +25,7 @@ const Xor16 = Xor(u16);
 /// strings or other types, you first need to hash them to a 64-bit integer.
 ///
 /// Xor8 is the recommended default, no more than a 0.3% false-positive probability.
-fn Xor(comptime T: type) type {
+pub fn Xor(comptime T: type) type {
     return struct {
         seed: u64,
         blockLength: u64,
