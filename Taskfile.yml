@@ -12,4 +12,4 @@ tasks:
   test:
     desc: Test code
     cmds:
-      - zig build test
+      - zig build test </dev/null |& cat
