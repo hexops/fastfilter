@@ -1,4 +1,5 @@
 const std = @import("std");
+const util = @import("util.zig");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
@@ -48,8 +49,27 @@ pub fn Xor(comptime T: type) type {
             return self;
         }
 
-        pub fn deinit(self: *Self, allocator: *Allocator) void {
+        pub inline fn deinit(self: *Self, allocator: *Allocator) void {
             allocator.destroy(self);
+        }
+
+        /// reports if the specified key is within the set.
+        pub inline fn contain(self: *Self, key: u64) bool {
+            var hash = util.mix_split(key, self.seed);
+            var f = util.fingerprint(hash);
+            var r0 = @truncate(u32, hash);
+            var r1 = @truncate(u32, util.rotl64(hash, 21));
+            var r2 = @truncate(u32, util.rotl64(hash, 42));
+            var bl = @truncate(u32, self.blockLength);
+            var h0 = util.reduce(r0, bl);
+            var h1 = util.reduce(r1, bl) + bl;
+            var h2 = util.reduce(r2, bl) + 2 * bl;
+            return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
+        }
+
+        // reportss the size in bytes of the filter.
+        pub inline fn size_in_bytes(self: *Self) usize {
+            return 3 * self.blockLength * @sizeOf(T) + @sizeOf(Self);
         }
     };
 }
@@ -59,6 +79,9 @@ test "xor8" {
     const size = 1000000;
     const filter = try Xor8.init(allocator, size);
     defer filter.deinit(allocator);
+
+    testing.expect(filter.contain(1234) == false);
+    testing.expectEqual(@as(usize, 1000064), filter.size_in_bytes());
 }
 
 test "xor16" {
@@ -66,4 +89,7 @@ test "xor16" {
     const size = 1000000;
     const filter = try Xor16.init(allocator, size);
     defer filter.deinit(allocator);
+
+    testing.expect(filter.contain(1234) == false);
+    testing.expectEqual(@as(usize, 2000096), filter.size_in_bytes());
 }
