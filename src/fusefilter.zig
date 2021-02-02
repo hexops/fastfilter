@@ -1,4 +1,5 @@
 const std = @import("std");
+const util = @import("util.zig");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
@@ -43,6 +44,27 @@ pub const Fuse8 = struct {
     pub fn deinit(self: *Fuse8, allocator: *Allocator) void {
         allocator.destroy(self);
     }
+
+    /// reports if the specified key is within the set with false-positive rate.
+    pub inline fn contain(self: *Fuse8, key: u64) bool {
+        var hash = util.mix_split(key, self.seed);
+        var f = util.fingerprint(hash);
+        var r0 = @truncate(u32, hash);
+        var r1 = @truncate(u32, util.rotl64(hash, 21));
+        var r2 = @truncate(u32, util.rotl64(hash, 42));
+        var r3 = @truncate(u32, (0xBF58476D1CE4E5B9 *% hash) >> 32);
+        var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
+        var sl = @truncate(u32, self.segmentLength);
+        var h0 = (seg + 0) * sl + util.reduce(r1, sl);
+        var h1 = (seg + 1) * sl + util.reduce(r2, sl);
+        var h2 = (seg + 2) * sl + util.reduce(r3, sl);
+        return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
+    }
+
+    /// reports the size in bytes of the filter.
+    pub inline fn size_in_bytes(self: *Fuse8) usize {
+        return FUSE_SLOTS * self.segmentLength * @sizeOf(u8) + @sizeOf(Fuse8);
+    }
 };
 
 test "fuse8" {
@@ -50,4 +72,7 @@ test "fuse8" {
     const size = 1000000;
     const filter = try Fuse8.init(allocator, size);
     defer filter.deinit(allocator);
+
+    testing.expect(filter.contain(1234) == false);
+    testing.expectEqual(@as(usize, 1137638), filter.size_in_bytes());
 }

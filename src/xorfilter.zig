@@ -53,7 +53,7 @@ pub fn Xor(comptime T: type) type {
             allocator.destroy(self);
         }
 
-        /// reports if the specified key is within the set.
+        /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *Self, key: u64) bool {
             var hash = util.mix_split(key, self.seed);
             var f = util.fingerprint(hash);
@@ -67,7 +67,7 @@ pub fn Xor(comptime T: type) type {
             return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
         }
 
-        // reportss the size in bytes of the filter.
+        /// reports the size in bytes of the filter.
         pub inline fn size_in_bytes(self: *Self) usize {
             return 3 * self.blockLength * @sizeOf(T) + @sizeOf(Self);
         }
