@@ -13,7 +13,7 @@ pub inline fn murmur64(h: u64) u64 {
 }
 
 pub inline fn mix_split(key: u64, seed: u64) u64 {
-    return murmur64(key + seed);
+    return murmur64(key +% seed);
 }
 
 pub inline fn rotl64(n: u64, c: usize) u64 {

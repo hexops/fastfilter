@@ -263,8 +263,7 @@ test "fuse8" {
     var i:u64 = 0;
     var default_prng = std.rand.DefaultPrng.init(0);
     while(i < trials): (i+=1){
-        // TODO(slimsag): Investigate why maxInt(u64) leads to overflow.
-        var random_key:u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u32));
+        var random_key:u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
         if(filter.contain(random_key)) {
             if(random_key >= keys.len) {
                 random_matches+=1;
