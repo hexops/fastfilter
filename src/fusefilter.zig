@@ -54,7 +54,7 @@ pub const Fuse8 = struct {
         var r2 = @truncate(u32, util.rotl64(hash, 42));
         var r3 = @truncate(u32, (0xBF58476D1CE4E5B9 *% hash) >> 32);
         var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
-        var sl:u64 = self.segmentLength;
+        var sl: u64 = self.segmentLength;
         var h0 = (seg + 0) * sl + util.reduce(r1, @truncate(u32, sl));
         var h1 = (seg + 1) * sl + util.reduce(r2, @truncate(u32, sl));
         var h2 = (seg + 2) * sl + util.reduce(r3, @truncate(u32, sl));
@@ -166,7 +166,7 @@ pub const Fuse8 = struct {
             stack_size -= 1;
             var ki = stack[stack_size];
             var hs = get_just_h0_h1_h2(ki.hash, self);
-            var hsh:u8 = @truncate(u8, util.fingerprint(ki.hash));
+            var hsh: u8 = @truncate(u8, util.fingerprint(ki.hash));
             if (ki.index == hs.h0) {
                 hsh ^= self.fingerprints[hs.h1] ^ self.fingerprints[hs.h2];
             } else if (ki.index == hs.h1) {
@@ -202,9 +202,9 @@ inline fn get_h0_h1_h2(k: u64, filter: *Fuse8) Hashes {
     var sl = filter.segmentLength;
     return Hashes{
         .h = hash,
-        .h0 = @truncate(u32, @intCast(u64, (seg + 0)) * sl + @intCast(u64, util.reduce(r1, @truncate(u32,sl)))),
-        .h1 = @truncate(u32, @intCast(u64, (seg + 1)) * sl + @intCast(u64, util.reduce(r2, @truncate(u32,sl)))),
-        .h2 = @truncate(u32, @intCast(u64, (seg + 2)) * sl + @intCast(u64, util.reduce(r3, @truncate(u32,sl)))),
+        .h0 = @truncate(u32, @intCast(u64, (seg + 0)) * sl + @intCast(u64, util.reduce(r1, @truncate(u32, sl)))),
+        .h1 = @truncate(u32, @intCast(u64, (seg + 1)) * sl + @intCast(u64, util.reduce(r2, @truncate(u32, sl)))),
+        .h2 = @truncate(u32, @intCast(u64, (seg + 2)) * sl + @intCast(u64, util.reduce(r3, @truncate(u32, sl)))),
     };
 }
 
@@ -222,9 +222,9 @@ inline fn get_just_h0_h1_h2(hash: u64, filter: *Fuse8) H0h1h2 {
     var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
     var sl = filter.segmentLength;
     return H0h1h2{
-        .h0 = @truncate(u32, @intCast(u64, (seg + 0)) * sl + @intCast(u64, util.reduce(r1, @truncate(u32,sl)))),
-        .h1 = @truncate(u32, @intCast(u64, (seg + 1)) * sl + @intCast(u64, util.reduce(r2, @truncate(u32,sl)))),
-        .h2 = @truncate(u32, @intCast(u64, (seg + 2)) * sl + @intCast(u64, util.reduce(r3, @truncate(u32,sl)))),
+        .h0 = @truncate(u32, @intCast(u64, (seg + 0)) * sl + @intCast(u64, util.reduce(r1, @truncate(u32, sl)))),
+        .h1 = @truncate(u32, @intCast(u64, (seg + 1)) * sl + @intCast(u64, util.reduce(r2, @truncate(u32, sl)))),
+        .h2 = @truncate(u32, @intCast(u64, (seg + 2)) * sl + @intCast(u64, util.reduce(r3, @truncate(u32, sl)))),
     };
 }
 
@@ -258,15 +258,15 @@ test "fuse8" {
         testing.expect(filter.contain(key) == true);
     }
 
-    var random_matches:u64 = 0;
+    var random_matches: u64 = 0;
     const trials = 10000000;
-    var i:u64 = 0;
+    var i: u64 = 0;
     var default_prng = std.rand.DefaultPrng.init(0);
-    while(i < trials): (i+=1){
-        var random_key:u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
-        if(filter.contain(random_key)) {
-            if(random_key >= keys.len) {
-                random_matches+=1;
+    while (i < trials) : (i += 1) {
+        var random_key: u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
+        if (filter.contain(random_key)) {
+            if (random_key >= keys.len) {
+                random_matches += 1;
             }
         }
     }
