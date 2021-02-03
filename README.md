@@ -30,6 +30,7 @@ Additionally, thanks to Zig's generics it is possible to use use any integral ty
 Special thanks go to:
 
 * Thomas Mueller Graf (@thomasmueller) and Daniel Lemire (@lemire), University of Quebec (TELUQ), Canada - _for their excellent research into xor filters, xor+ filters, their C implementation, and more._
+* [Martin Dietzfelbinger](https://arxiv.org/search/cs?searchtype=author&query=Dietzfelbinger%2C+M) and [Stefan Walzer](https://arxiv.org/search/cs?searchtype=author&query=Walzer%2C+S), Technische Universität Ilmenau, Germany - _for their excellent research into fuse filters._
 * Jim Apple (@jbapple) - _for their C implementation[[1]](https://github.com/FastFilter/xor_singleheader/pull/11) of fuse filters_
 * Andrew Gutekanst (@Andoryuuta), for providing substantial help in debugging several issues in the Zig implementation with his RE skills.
 
