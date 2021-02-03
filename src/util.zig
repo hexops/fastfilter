@@ -13,7 +13,7 @@ pub inline fn murmur64(h: u64) u64 {
 }
 
 pub inline fn mix_split(key: u64, seed: u64) u64 {
-    return murmur64(key + seed);
+    return murmur64(key +% seed);
 }
 
 pub inline fn rotl64(n: u64, c: usize) u64 {
@@ -22,7 +22,7 @@ pub inline fn rotl64(n: u64, c: usize) u64 {
 
 pub inline fn reduce(hash: u32, n: u32) u32 {
     // http://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction
-    return @intCast(u32, (@intCast(u64, hash) *% @intCast(u64, n)) >> 32);
+    return @truncate(u32, (@intCast(u64, hash) *% @intCast(u64, n)) >> 32);
 }
 
 pub inline fn fingerprint(hash: u64) u64 {
