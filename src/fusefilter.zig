@@ -31,7 +31,7 @@ pub const Fuse8 = struct {
     /// `deinit(allocator)` must be called by the caller to free the memory.
     pub fn init(allocator: *Allocator, size: usize) !*Fuse8 {
         const self = try allocator.create(Fuse8);
-        var capacity: usize = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
+        var capacity = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
         capacity = capacity / FUSE_SLOTS * FUSE_SLOTS;
         self.* = Fuse8{
             .seed = 0,
