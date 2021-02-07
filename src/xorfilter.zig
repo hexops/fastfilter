@@ -39,7 +39,7 @@ pub fn Xor(comptime T: type) type {
         /// `deinit(allocator)` must be called by the caller to free the memory.
         pub fn init(allocator: *Allocator, size: usize) !*Self {
             const self = try allocator.create(Self);
-            var capacity = @floatToInt(usize, 32 + 1.23 + @intToFloat(f64, size));
+            var capacity = @floatToInt(usize, 32 + 1.23 * @intToFloat(f64, size));
             capacity = capacity / 3 * 3;
             self.* = Self{
                 .seed = 0,
@@ -56,14 +56,14 @@ pub fn Xor(comptime T: type) type {
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *Self, key: u64) bool {
             var hash = util.mix_split(key, self.seed);
-            var f = util.fingerprint(hash);
+            var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             var r2 = @truncate(u32, util.rotl64(hash, 42));
             var bl = @truncate(u32, self.blockLength);
-            var h0 = util.reduce(r0, bl);
-            var h1 = util.reduce(r1, bl) + bl;
-            var h2 = util.reduce(r2, bl) + 2 * bl;
+            var h0: u32 = util.reduce(r0, bl);
+            var h1: u32 = util.reduce(r1, bl) + bl;
+            var h2: u32 = util.reduce(r2, bl) + 2 * bl;
             return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
         }
 
@@ -71,25 +71,326 @@ pub fn Xor(comptime T: type) type {
         pub inline fn size_in_bytes(self: *Self) usize {
             return 3 * self.blockLength * @sizeOf(T) + @sizeOf(Self);
         }
+
+        /// populates the filter with the given keys.
+        ///
+        /// The caller is responsible for ensuring that there are no duplicated keys.
+        ///
+        /// The inner loop will run up to XOR_MAX_ITERATIONS times (default 100) and should never fail,
+        /// except if there are duplicated keys.
+        ///
+        /// The provided allocator will be used for creating temporary buffers that do not outlive the
+        /// function call.
+        pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) !bool {
+            var rng_counter: u64 = 1;
+            self.seed = util.rng_splitmix64(&rng_counter);
+
+            var sets = try allocator.alloc(Set, self.blockLength * 3);
+            defer allocator.free(sets);
+
+            var Q = try allocator.alloc(Keyindex, sets.len);
+            defer allocator.free(Q);
+
+            var stack = try allocator.alloc(Keyindex, keys.len);
+            defer allocator.free(stack);
+
+            var sets0 = sets;
+            var sets1 = sets[self.blockLength..];
+            var sets2 = sets[2 * self.blockLength ..];
+            var Q0 = Q;
+            var Q1 = Q[self.blockLength..];
+            var Q2 = Q[2 * self.blockLength ..];
+
+            var loop: usize = 0;
+            while (true) : (loop += 1) {
+                if (loop + 1 > XOR_MAX_ITERATIONS) {
+                    return false; // too many iterations, keys are not unique.
+                }
+                for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
+
+                for (keys) |key, i| {
+                    var hs = self.get_h0_h1_h2(key);
+                    sets0[hs.h0].xormask ^= hs.h;
+                    sets0[hs.h0].count += 1;
+                    sets1[hs.h1].xormask ^= hs.h;
+                    sets1[hs.h1].count += 1;
+                    sets2[hs.h2].xormask ^= hs.h;
+                    sets2[hs.h2].count += 1;
+                }
+
+                // TODO(upstream): the flush should be sync with the detection that follows scan values
+                // with a count of one.
+                var Q0size: usize = 0;
+                var Q1size: usize = 0;
+                var Q2size: usize = 0;
+                {
+                    var i: usize = 0;
+                    while (i < self.blockLength) : (i += 1) {
+                        if (sets0[i].count == 1) {
+                            Q0[Q0size].index = @intCast(u32, i);
+                            Q0[Q0size].hash = sets0[i].xormask;
+                            Q0size += 1;
+                        }
+                    }
+                }
+                {
+                    var i: usize = 0;
+                    while (i < self.blockLength) : (i += 1) {
+                        if (sets1[i].count == 1) {
+                            Q1[Q1size].index = @intCast(u32, i);
+                            Q1[Q1size].hash = sets1[i].xormask;
+                            Q1size += 1;
+                        }
+                    }
+                }
+                {
+                    var i: usize = 0;
+                    while (i < self.blockLength) : (i += 1) {
+                        if (sets2[i].count == 1) {
+                            Q2[Q2size].index = @intCast(u32, i);
+                            Q2[Q2size].hash = sets2[i].xormask;
+                            Q2size += 1;
+                        }
+                    }
+                }
+
+                var stack_size: usize = 0;
+                while (Q0size + Q1size + Q2size > 0) {
+                    while (Q0size > 0) {
+                        Q0size -%= 1;
+                        var keyindex = Q0[Q0size];
+                        var index = keyindex.index;
+                        if (sets0[index].count == 0) {
+                            continue; // not actually possible after the initial scan.
+                        }
+                        var hash = keyindex.hash;
+                        var h1 = self.get_h1(hash);
+                        var h2 = self.get_h2(hash);
+
+                        stack[stack_size] = keyindex;
+                        stack_size += 1;
+                        sets1[h1].xormask ^= hash;
+                        sets1[h1].count -%= 1;
+                        if (sets1[h1].count == 1) {
+                            Q1[Q1size].index = h1;
+                            Q1[Q1size].hash = sets1[h1].xormask;
+                            Q1size += 1;
+                        }
+                        sets2[h2].xormask ^= hash;
+                        sets2[h2].count -%= 1;
+                        if (sets2[h2].count == 1) {
+                            Q2[Q2size].index = h2;
+                            Q2[Q2size].hash = sets2[h2].xormask;
+                            Q2size += 1;
+                        }
+                    }
+                    while (Q1size > 0) {
+                        Q1size -%= 1;
+                        var keyindex = Q1[Q1size];
+                        var index = keyindex.index;
+                        if (sets1[index].count == 0) {
+                            continue; // not actually possible after the initial scan.
+                        }
+                        var hash = keyindex.hash;
+                        var h0 = self.get_h0(hash);
+                        var h2 = self.get_h2(hash);
+                        keyindex.index += @truncate(u32, self.blockLength);
+
+                        stack[stack_size] = keyindex;
+                        stack_size += 1;
+                        sets0[h0].xormask ^= hash;
+                        sets0[h0].count -%= 1;
+                        if (sets0[h0].count == 1) {
+                            Q0[Q0size].index = h0;
+                            Q0[Q0size].hash = sets0[h0].xormask;
+                            Q0size += 1;
+                        }
+                        sets2[h2].xormask ^= hash;
+                        sets2[h2].count -%= 1;
+                        if (sets2[h2].count == 1) {
+                            Q2[Q2size].index = h2;
+                            Q2[Q2size].hash = sets2[h2].xormask;
+                            Q2size += 1;
+                        }
+                    }
+                    while (Q2size > 0) {
+                        Q2size -%= 1;
+                        var keyindex = Q2[Q2size];
+                        var index = keyindex.index;
+                        if (sets2[index].count == 0) {
+                            continue; // not actually possible after the initial scan.
+                        }
+                        var hash = keyindex.hash;
+                        var h0 = self.get_h0(hash);
+                        var h1 = self.get_h1(hash);
+                        keyindex.index += @truncate(u32, 2 * @intCast(u64, self.blockLength));
+
+                        stack[stack_size] = keyindex;
+                        stack_size += 1;
+                        sets0[h0].xormask ^= hash;
+                        sets0[h0].count -%= 1;
+                        if (sets0[h0].count == 1) {
+                            Q0[Q0size].index = h0;
+                            Q0[Q0size].hash = sets0[h0].xormask;
+                            Q0size += 1;
+                        }
+                        sets1[h1].xormask ^= hash;
+                        sets1[h1].count -%= 1;
+                        if (sets1[h1].count == 1) {
+                            Q1[Q1size].index = h1;
+                            Q1[Q1size].hash = sets1[h1].xormask;
+                            Q1size += 1;
+                        }
+                    }
+                }
+                if (stack_size == keys.len) {
+                    // success
+                    break;
+                }
+                self.seed = util.rng_splitmix64(&rng_counter);
+            }
+
+            var fingerprints0: []T = self.fingerprints;
+            var fingerprints1: []T = self.fingerprints[self.blockLength..];
+            var fingerprints2: []T = self.fingerprints[2 * self.blockLength ..];
+
+            var stack_size = keys.len;
+            while (stack_size > 0) {
+                stack_size -= 1;
+                var ki = stack[stack_size];
+                var val: u64 = util.fingerprint(ki.hash);
+                if (ki.index < @truncate(u32, self.blockLength)) {
+                    val ^= fingerprints1[self.get_h1(ki.hash)] ^ fingerprints2[self.get_h2(ki.hash)];
+                } else if (ki.index < 2 * @truncate(u32, self.blockLength)) {
+                    val ^= fingerprints0[self.get_h0(ki.hash)] ^ fingerprints2[self.get_h2(ki.hash)];
+                } else {
+                    val ^= fingerprints0[self.get_h0(ki.hash)] ^ fingerprints1[self.get_h1(ki.hash)];
+                }
+                self.fingerprints[ki.index] = @truncate(T, val);
+            }
+            return true;
+        }
+
+        inline fn get_h0_h1_h2(self: *Self, k: u64) Hashes {
+            var hash = util.mix_split(k, self.seed);
+            var r0 = @truncate(u32, hash);
+            var r1 = @truncate(u32, util.rotl64(hash, 21));
+            var r2 = @truncate(u32, util.rotl64(hash, 42));
+            return Hashes{
+                .h = hash,
+                .h0 = util.reduce(r0, @truncate(u32, self.blockLength)),
+                .h1 = util.reduce(r1, @truncate(u32, self.blockLength)),
+                .h2 = util.reduce(r2, @truncate(u32, self.blockLength)),
+            };
+        }
+
+        inline fn get_h0(self: *Self, hash: u64) u32 {
+            var r0 = @truncate(u32, hash);
+            return util.reduce(r0, @truncate(u32, self.blockLength));
+        }
+
+        inline fn get_h1(self: *Self, hash: u64) u32 {
+            var r1 = @truncate(u32, util.rotl64(hash, 21));
+            return util.reduce(r1, @truncate(u32, self.blockLength));
+        }
+
+        inline fn get_h2(self: *Self, hash: u64) u32 {
+            var r2 = @truncate(u32, util.rotl64(hash, 42));
+            return util.reduce(r2, @truncate(u32, self.blockLength));
+        }
     };
 }
 
-test "xor8" {
+const Set = struct {
+    xormask: u64,
+    count: u32,
+};
+
+const Hashes = struct {
+    h: u64,
+    h0: u32,
+    h1: u32,
+    h2: u32,
+};
+
+const H0h1h2 = struct {
+    h0: u32,
+    h1: u32,
+    h2: u32,
+};
+
+const Keyindex = struct {
+    hash: u64,
+    index: u32,
+};
+
+fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
-    const size = 1000000;
-    const filter = try Xor8.init(allocator, size);
+    const filter = try Xor(T).init(allocator, size);
     defer filter.deinit(allocator);
 
-    testing.expect(filter.contain(1234) == false);
-    testing.expectEqual(@as(usize, 1000064), filter.size_in_bytes());
+    var keys = try allocator.alloc(u64, size);
+    defer allocator.free(keys);
+    for (keys) |key, i| {
+        keys[i] = i;
+    }
+
+    var success = try filter.populate(allocator, keys[0..]);
+    testing.expect(success == true);
+
+    testing.expect(filter.contain(1) == true);
+    testing.expect(filter.contain(5) == true);
+    testing.expect(filter.contain(9) == true);
+    testing.expect(filter.contain(1234) == true);
+    testing.expectEqual(@as(usize, size_in_bytes), filter.size_in_bytes());
+
+    for (keys) |key| {
+        testing.expect(filter.contain(key) == true);
+    }
+
+    var random_matches: u64 = 0;
+    const trials = 10000000;
+    var i: u64 = 0;
+    var default_prng = std.rand.DefaultPrng.init(0);
+    while (i < trials) : (i += 1) {
+        var random_key: u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
+        if (filter.contain(random_key)) {
+            if (random_key >= keys.len) {
+                random_matches += 1;
+            }
+        }
+    }
+
+    const fpp = @intToFloat(f64, random_matches) * 1.0 / trials;
+    std.debug.print("fpp {d:3.10} (estimated)\n", .{fpp});
+    std.debug.print("\t(keys={}, random_matches={}, trials={})\n", .{ size, random_matches, trials });
+    std.debug.print("\tbits per entry {d:3.1}\n", .{@intToFloat(f64, filter.size_in_bytes()) * 8.0 / @intToFloat(f64, size)});
+}
+
+test "xor8" {
+    try xorTest(u8, 10000, 12362);
 }
 
 test "xor16" {
-    const allocator = std.heap.page_allocator;
-    const size = 1000000;
-    const filter = try Xor16.init(allocator, size);
-    defer filter.deinit(allocator);
+    try xorTest(u16, 10000, 24692);
+}
 
-    testing.expect(filter.contain(1234) == false);
-    testing.expectEqual(@as(usize, 2000096), filter.size_in_bytes());
+test "xor32" {
+    // NOTE: We only use 1m keys here to keep the test running fast. With 100 million keys, the
+    // test can take a minute or two on a 2020 Macbook and requires ~6.3 GiB of memory. Still,
+    // estimated fpp is 0 - I leave it to the reader to estimate the fpp of xor32/xor64.
+    //
+    // If you have a really beefy machine, it would be cool to try this test with a huge amount of
+    // keys and higher `trials` in `xorTest`.
+    try xorTest(u32, 1000000, 4920152);
+}
+
+test "xor64" {
+    // NOTE: We only use 1m keys here to keep the test running fast. With 100 million keys, the
+    // test can take a minute or two on a 2020 Macbook and requires ~6.3 GiB of memory. Still,
+    // estimated fpp is 0 - I leave it to the reader to estimate the fpp of xor32/xor64.
+    //
+    // If you have a really beefy machine, it would be cool to try this test with a huge amount of
+    // keys and higher `trials` in `xorTest`.
+    try xorTest(u64, 1000000, 9840272);
 }
