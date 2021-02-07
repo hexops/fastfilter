@@ -79,7 +79,7 @@ pub const Fuse8 = struct {
         var rng_counter: u64 = 1;
         self.seed = util.rng_splitmix64(&rng_counter);
 
-        var sets = try allocator.alloc(Fuseset, self.segmentLength * FUSE_SLOTS);
+        var sets = try allocator.alloc(Set, self.segmentLength * FUSE_SLOTS);
         defer allocator.free(sets);
 
         var Q = try allocator.alloc(Keyindex, sets.len);
@@ -93,7 +93,7 @@ pub const Fuse8 = struct {
             if (loop + 1 > XOR_MAX_ITERATIONS) {
                 return false; // too many iterations, keys are not unique.
             }
-            for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Fuseset);
+            for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
             for (keys) |key, i| {
                 var hs = get_h0_h1_h2(key, self);
@@ -180,7 +180,7 @@ pub const Fuse8 = struct {
     }
 };
 
-const Fuseset = struct {
+const Set = struct {
     fusemask: u64,
     count: u32,
 };
