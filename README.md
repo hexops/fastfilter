@@ -76,9 +76,9 @@ My _non-expert_ understanding is that fuse filters are more compressed and optim
 
 ## Special thanks
 
-* Thomas Mueller Graf ([@thomasmueller](https://github.com/thomasmueller)) and Daniel Lemire ([@lemire](https://github.com/lemire)), University of Quebec (TELUQ), Canada - _for their excellent research into xor filters, xor+ filters, their C implementation, and more._
-* [Martin Dietzfelbinger](https://arxiv.org/search/cs?searchtype=author&query=Dietzfelbinger%2C+M) and [Stefan Walzer](https://arxiv.org/search/cs?searchtype=author&query=Walzer%2C+S), Technische Universität Ilmenau, Germany - _for their excellent research into fuse filters._
-* Jim Apple ([@jbapple](https://github.com/jbapple)) - _for their C implementation[[1]](https://github.com/FastFilter/xor_singleheader/pull/11) of fuse filters_
-* Andrew Gutekanst ([@Andoryuuta](https://github.com/Andoryuuta)), for providing substantial help in debugging several issues in the Zig implementation with their RE skills.
+* [**Thomas Mueller Graf**](https://github.com/thomasmueller) and [**Daniel Lemire**](https://github.com/lemire) - _for their excellent research into xor filters, xor+ filters, their C implementation, and more._
+* [**Martin Dietzfelbinger**](https://arxiv.org/search/cs?searchtype=author&query=Dietzfelbinger%2C+M) and [**Stefan Walzer**](https://arxiv.org/search/cs?searchtype=author&query=Walzer%2C+S) - _for their excellent research into fuse filters._
+* **Jim Apple** ([@jbapple](https://github.com/jbapple)) - _for their C implementation[[1]](https://github.com/FastFilter/xor_singleheader/pull/11) of fuse filters_
+* **Andrew Gutekanst** ([@Andoryuuta](https://github.com/Andoryuuta)) - _for providing substantial help in debugging several issues in the Zig implementation._
 
 If it was not for the above people, I ([@slimsag](https://github.com/slimsag)) would not have been able to write this implementation and learn from the excellent [C implementation](https://github.com/FastFilter/xor_singleheader). Please credit the above people if you use this library.
