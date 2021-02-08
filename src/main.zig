@@ -11,16 +11,16 @@ test "exports" {
     const allocator = std.heap.page_allocator;
 
     const fuse8Filter = try Fuse8.init(allocator, 1);
-    defer fuse8Filter.deinit(allocator);
+    defer fuse8Filter.destroy(allocator);
 
     const xorFilter = try Xor(u8).init(allocator, 1);
-    defer xorFilter.deinit(allocator);
+    defer xorFilter.destroy(allocator);
 
     const xor8Filter = try Xor8.init(allocator, 1);
-    defer xor8Filter.deinit(allocator);
+    defer xor8Filter.destroy(allocator);
 
     const xor16Filter = try Xor16.init(allocator, 1);
-    defer xor16Filter.deinit(allocator);
+    defer xor16Filter.destroy(allocator);
 
     var array = [_]i32{ 1, 2, 2 };
     const unique = AutoUnique(i32)(array[0..]);

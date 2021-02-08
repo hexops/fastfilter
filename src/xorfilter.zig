@@ -34,7 +34,7 @@ pub fn Xor(comptime T: type) type {
 
         /// initializes a Xor filter with enough capacity for a set containing up to `size` elements.
         ///
-        /// `deinit(allocator)` must be called by the caller to free the memory.
+        /// `destroy(allocator)` must be called by the caller to free the memory.
         pub fn init(allocator: *Allocator, size: usize) !*Self {
             const self = try allocator.create(Self);
             var capacity = @floatToInt(usize, 32 + 1.23 * @intToFloat(f64, size));
@@ -47,13 +47,13 @@ pub fn Xor(comptime T: type) type {
             return self;
         }
 
-        pub inline fn deinit(self: *Self, allocator: *Allocator) void {
+        pub inline fn destroy(self: *Self, allocator: *Allocator) void {
             allocator.destroy(self);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *Self, key: u64) bool {
-            var hash = util.mix_split(key, self.seed);
+            var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
@@ -66,7 +66,7 @@ pub fn Xor(comptime T: type) type {
         }
 
         /// reports the size in bytes of the filter.
-        pub inline fn size_in_bytes(self: *Self) usize {
+        pub inline fn sizeInBytes(self: *Self) usize {
             return 3 * self.blockLength * @sizeOf(T) + @sizeOf(Self);
         }
 
@@ -95,7 +95,7 @@ pub fn Xor(comptime T: type) type {
         /// `keys.len()` must return the `usize` length.
         pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) !bool {
             var rng_counter: u64 = 1;
-            self.seed = util.rng_splitmix64(&rng_counter);
+            self.seed = util.rngSplitMix64(&rng_counter);
 
             var sets = try allocator.alloc(Set, self.blockLength * 3);
             defer allocator.free(sets);
@@ -121,7 +121,7 @@ pub fn Xor(comptime T: type) type {
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
                 while (keys.next()) |key| {
-                    var hs = self.get_h0_h1_h2(key);
+                    var hs = self.getH0H1H2(key);
                     sets0[hs.h0].xormask ^= hs.h;
                     sets0[hs.h0].count += 1;
                     sets1[hs.h1].xormask ^= hs.h;
@@ -176,8 +176,8 @@ pub fn Xor(comptime T: type) type {
                             continue; // not actually possible after the initial scan.
                         }
                         var hash = keyindex.hash;
-                        var h1 = self.get_h1(hash);
-                        var h2 = self.get_h2(hash);
+                        var h1 = self.getH1(hash);
+                        var h2 = self.getH2(hash);
 
                         stack[stack_size] = keyindex;
                         stack_size += 1;
@@ -204,8 +204,8 @@ pub fn Xor(comptime T: type) type {
                             continue; // not actually possible after the initial scan.
                         }
                         var hash = keyindex.hash;
-                        var h0 = self.get_h0(hash);
-                        var h2 = self.get_h2(hash);
+                        var h0 = self.getH0(hash);
+                        var h2 = self.getH2(hash);
                         keyindex.index += @truncate(u32, self.blockLength);
 
                         stack[stack_size] = keyindex;
@@ -233,8 +233,8 @@ pub fn Xor(comptime T: type) type {
                             continue; // not actually possible after the initial scan.
                         }
                         var hash = keyindex.hash;
-                        var h0 = self.get_h0(hash);
-                        var h1 = self.get_h1(hash);
+                        var h0 = self.getH0(hash);
+                        var h1 = self.getH1(hash);
                         keyindex.index += @truncate(u32, 2 * @intCast(u64, self.blockLength));
 
                         stack[stack_size] = keyindex;
@@ -259,7 +259,7 @@ pub fn Xor(comptime T: type) type {
                     // success
                     break;
                 }
-                self.seed = util.rng_splitmix64(&rng_counter);
+                self.seed = util.rngSplitMix64(&rng_counter);
             }
 
             var fingerprints0: []T = self.fingerprints;
@@ -272,19 +272,19 @@ pub fn Xor(comptime T: type) type {
                 var ki = stack[stack_size];
                 var val: u64 = util.fingerprint(ki.hash);
                 if (ki.index < @truncate(u32, self.blockLength)) {
-                    val ^= fingerprints1[self.get_h1(ki.hash)] ^ fingerprints2[self.get_h2(ki.hash)];
+                    val ^= fingerprints1[self.getH1(ki.hash)] ^ fingerprints2[self.getH2(ki.hash)];
                 } else if (ki.index < 2 * @truncate(u32, self.blockLength)) {
-                    val ^= fingerprints0[self.get_h0(ki.hash)] ^ fingerprints2[self.get_h2(ki.hash)];
+                    val ^= fingerprints0[self.getH0(ki.hash)] ^ fingerprints2[self.getH2(ki.hash)];
                 } else {
-                    val ^= fingerprints0[self.get_h0(ki.hash)] ^ fingerprints1[self.get_h1(ki.hash)];
+                    val ^= fingerprints0[self.getH0(ki.hash)] ^ fingerprints1[self.getH1(ki.hash)];
                 }
                 self.fingerprints[ki.index] = @truncate(T, val);
             }
             return true;
         }
 
-        inline fn get_h0_h1_h2(self: *Self, k: u64) Hashes {
-            var hash = util.mix_split(k, self.seed);
+        inline fn getH0H1H2(self: *Self, k: u64) Hashes {
+            var hash = util.mixSplit(k, self.seed);
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             var r2 = @truncate(u32, util.rotl64(hash, 42));
@@ -296,17 +296,17 @@ pub fn Xor(comptime T: type) type {
             };
         }
 
-        inline fn get_h0(self: *Self, hash: u64) u32 {
+        inline fn getH0(self: *Self, hash: u64) u32 {
             var r0 = @truncate(u32, hash);
             return util.reduce(r0, @truncate(u32, self.blockLength));
         }
 
-        inline fn get_h1(self: *Self, hash: u64) u32 {
+        inline fn getH1(self: *Self, hash: u64) u32 {
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             return util.reduce(r1, @truncate(u32, self.blockLength));
         }
 
-        inline fn get_h2(self: *Self, hash: u64) u32 {
+        inline fn getH2(self: *Self, hash: u64) u32 {
             var r2 = @truncate(u32, util.rotl64(hash, 42));
             return util.reduce(r2, @truncate(u32, self.blockLength));
         }
@@ -336,11 +336,11 @@ const Keyindex = struct {
     index: u32,
 };
 
-fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
+fn xorTest(T: anytype, size: usize, sizeInBytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Xor(T).init(allocator, size);
     comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
-    defer filter.deinit(allocator);
+    defer filter.destroy(allocator);
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
@@ -355,7 +355,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     testing.expect(filter.contain(5) == true);
     testing.expect(filter.contain(9) == true);
     testing.expect(filter.contain(1234) == true);
-    testing.expectEqual(@as(usize, size_in_bytes), filter.size_in_bytes());
+    testing.expectEqual(@as(usize, sizeInBytes), filter.sizeInBytes());
 
     for (keys) |key| {
         testing.expect(filter.contain(key) == true);
@@ -377,7 +377,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const fpp = @intToFloat(f64, random_matches) * 1.0 / trials;
     std.debug.print("fpp {d:3.10} (estimated)\n", .{fpp});
     std.debug.print("\t(keys={}, random_matches={}, trials={})\n", .{ size, random_matches, trials });
-    std.debug.print("\tbits per entry {d:3.1}\n", .{@intToFloat(f64, filter.size_in_bytes()) * 8.0 / @intToFloat(f64, size)});
+    std.debug.print("\tbits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
 }
 
 test "xor8" {

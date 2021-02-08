@@ -33,7 +33,7 @@ pub fn Fuse(comptime T: type) type {
 
         /// initializes a fuse filter with enough capacity for a set containing up to `size` elements.
         ///
-        /// `deinit(allocator)` must be called by the caller to free the memory.
+        /// `destroy(allocator)` must be called by the caller to free the memory.
         pub fn init(allocator: *Allocator, size: usize) !*Self {
             const self = try allocator.create(Self);
             var capacity = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
@@ -46,13 +46,13 @@ pub fn Fuse(comptime T: type) type {
             return self;
         }
 
-        pub fn deinit(self: *Self, allocator: *Allocator) void {
+        pub fn destroy(self: *Self, allocator: *Allocator) void {
             allocator.destroy(self);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *Self, key: u64) bool {
-            var hash = util.mix_split(key, self.seed);
+            var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
@@ -67,7 +67,7 @@ pub fn Fuse(comptime T: type) type {
         }
 
         /// reports the size in bytes of the filter.
-        pub inline fn size_in_bytes(self: *Self) usize {
+        pub inline fn sizeInBytes(self: *Self) usize {
             return FUSE_SLOTS * self.segmentLength * @sizeOf(T) + @sizeOf(Self);
         }
 
@@ -96,7 +96,7 @@ pub fn Fuse(comptime T: type) type {
         /// `keys.len()` must return the `usize` length.
         pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) !bool {
             var rng_counter: u64 = 1;
-            self.seed = util.rng_splitmix64(&rng_counter);
+            self.seed = util.rngSplitMix64(&rng_counter);
 
             var sets = try allocator.alloc(Set, self.segmentLength * FUSE_SLOTS);
             defer allocator.free(sets);
@@ -115,7 +115,7 @@ pub fn Fuse(comptime T: type) type {
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
                 while (keys.next()) |key| {
-                    var hs = get_h0_h1_h2(self, key);
+                    var hs = getH0H1H2(self, key);
                     sets[hs.h0].fusemask ^= hs.h;
                     sets[hs.h0].count += 1;
                     sets[hs.h1].fusemask ^= hs.h;
@@ -144,7 +144,7 @@ pub fn Fuse(comptime T: type) type {
                         continue; // not actually possible after the initial scan.
                     }
                     var hash = keyindex.hash;
-                    var hs = get_just_h0_h1_h2(self, hash);
+                    var hs = getJustH0H1H2(self, hash);
 
                     stack[stack_size] = keyindex;
                     stack_size += 1;
@@ -177,14 +177,14 @@ pub fn Fuse(comptime T: type) type {
                     // success
                     break;
                 }
-                self.seed = util.rng_splitmix64(&rng_counter);
+                self.seed = util.rngSplitMix64(&rng_counter);
             }
 
             var stack_size = keys.len();
             while (stack_size > 0) {
                 stack_size -= 1;
                 var ki = stack[stack_size];
-                var hs = get_just_h0_h1_h2(self, ki.hash);
+                var hs = getJustH0H1H2(self, ki.hash);
                 var hsh: T = @truncate(T, util.fingerprint(ki.hash));
                 if (ki.index == hs.h0) {
                     hsh ^= self.fingerprints[hs.h1] ^ self.fingerprints[hs.h2];
@@ -198,8 +198,8 @@ pub fn Fuse(comptime T: type) type {
             return true;
         }
 
-        inline fn get_h0_h1_h2(self: *Self, k: u64) Hashes {
-            var hash = util.mix_split(k, self.seed);
+        inline fn getH0H1H2(self: *Self, k: u64) Hashes {
+            var hash = util.mixSplit(k, self.seed);
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             var r2 = @truncate(u32, util.rotl64(hash, 42));
@@ -214,7 +214,7 @@ pub fn Fuse(comptime T: type) type {
             };
         }
 
-        inline fn get_just_h0_h1_h2(self: *Self, hash: u64) H0h1h2 {
+        inline fn getJustH0H1H2(self: *Self, hash: u64) H0h1h2 {
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             var r2 = @truncate(u32, util.rotl64(hash, 42));
@@ -253,11 +253,11 @@ const Keyindex = struct {
     index: u32,
 };
 
-fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
+fn fuseTest(T: anytype, size: usize, sizeInBytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Fuse(T).init(allocator, size);
     comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
-    defer filter.deinit(allocator);
+    defer filter.destroy(allocator);
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
@@ -272,7 +272,7 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     testing.expect(filter.contain(5) == true);
     testing.expect(filter.contain(9) == true);
     testing.expect(filter.contain(1234) == true);
-    testing.expectEqual(@as(usize, size_in_bytes), filter.size_in_bytes());
+    testing.expectEqual(@as(usize, sizeInBytes), filter.sizeInBytes());
 
     for (keys) |key| {
         testing.expect(filter.contain(key) == true);
@@ -292,7 +292,7 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     }
 
     std.debug.print("fpp {d:3.10} (estimated) \n", .{@intToFloat(f64, random_matches) * 1.0 / trials});
-    std.debug.print("bits per entry {d:3.1}\n", .{@intToFloat(f64, filter.size_in_bytes()) * 8.0 / @intToFloat(f64, size)});
+    std.debug.print("bits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
 }
 
 test "fuse4" {
