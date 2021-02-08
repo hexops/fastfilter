@@ -1,6 +1,5 @@
 const std = @import("std");
 const testing = std.testing;
-const print = std.debug.print;
 
 pub inline fn murmur64(h: u64) u64 {
     var v = h;
