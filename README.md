@@ -10,6 +10,7 @@ This is a [Zig](https://ziglang.org) implementation of Xor Filters and Fuse Filt
 - [Serialization](#serialization)
 - [Note about extremely large datasets](#note-about-extremely-large-datasets)
 - [Special thanks](#special-thanks)
+- [Changelog](#changelog)
 
 ## Benefits of Zig implementation
 
@@ -119,3 +120,9 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 * [**Andrew Gutekanst**](https://github.com/Andoryuuta) - _for providing substantial help in debugging several issues in the Zig implementation._
 
 If it was not for the above people, I ([@slimsag](https://github.com/slimsag)) would not have been able to write this implementation and learn from the excellent [C implementation](https://github.com/FastFilter/xor_singleheader). Please credit the above people if you use this library.
+
+## Changelog
+
+The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
+
+- **v0.8.0**: initial release with support for Xor and Fuse filters of varying bit sizes, key iterators, serialization, and a slice de-duplication helper.
