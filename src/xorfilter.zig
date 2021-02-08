@@ -336,7 +336,7 @@ const Keyindex = struct {
     index: u32,
 };
 
-fn xorTest(T: anytype, size: usize, sizeInBytes: usize) !void {
+fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Xor(T).init(allocator, size);
     comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
@@ -355,7 +355,7 @@ fn xorTest(T: anytype, size: usize, sizeInBytes: usize) !void {
     testing.expect(filter.contain(5) == true);
     testing.expect(filter.contain(9) == true);
     testing.expect(filter.contain(1234) == true);
-    testing.expectEqual(@as(usize, sizeInBytes), filter.sizeInBytes());
+    testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
 
     for (keys) |key| {
         testing.expect(filter.contain(key) == true);
