@@ -375,6 +375,10 @@ test "xor16" {
     try xorTest(u16, 10000, 24692);
 }
 
+test "xor20" {
+    try xorTest(u20, 10000, 49352);
+}
+
 test "xor32" {
     // NOTE: We only use 1m keys here to keep the test running fast. With 100 million keys, the
     // test can take a minute or two on a 2020 Macbook and requires ~6.3 GiB of memory. Still,
