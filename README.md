@@ -11,7 +11,7 @@ The implementation provides:
 * xor32, xor64 (rarely needed)
 * fuse8 (better than xor+ variants when you have > 100 million keys)
 
-Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, this implementation is also able to support more specific variants of xor filters like xor4, xor6, xor10, xor12, or any other log2 bit size for xor keys via e.g. `Xor(u4)`.
+Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, this implementation is also able to support more specific variants of xor filters like xor4, xor6, xor10, xor12, or any other log2 bit size for xor keys via e.g. `Xor(u4)`. This can be interesting if you care about serialization size (but not memory, as Zig represents `u4` as a full byte.)
 
 ## Research
 
@@ -65,6 +65,25 @@ test "mytest" {
 ```
 
 (you can just add this project as a Git submodule in yours for now, as [Zig's official package manager is still under way](https://github.com/ziglang/zig/issues/943).)
+
+## Serialization
+
+To serialize the filters, you only need to encode the three struct fields:
+
+```zig
+pub fn Xor(comptime T: type) type {
+    return struct {
+        seed: u64,
+        blockLength: u64,
+        fingerprints: []T,
+...
+```
+
+`T` will be the chosen fingerprint size, e.g. `u8` for `Xor8`.
+
+Look at [`std.io.Writer`](https://sourcegraph.com/github.com/ziglang/zig/-/blob/lib/std/io/writer.zig) and [`std.io.BitWriter`](https://sourcegraph.com/github.com/ziglang/zig/-/blob/lib/std/io/bit_writer.zig) for ideas on actual serialization.
+
+(The same is true of the fuse filter, replacing `blockLength` with `segmentLength`.)
 
 ## Should I use xor filters or fuse filters?
 
