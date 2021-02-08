@@ -6,6 +6,7 @@ pub const Xor8 = @import("xorfilter.zig").Xor8;
 pub const Xor16 = @import("xorfilter.zig").Xor16;
 pub const AutoUnique = @import("unique.zig").AutoUnique;
 pub const Unique = @import("unique.zig").Unique;
+pub const Error = @import("utils.zig").Error;
 
 test "exports" {
     const allocator = std.heap.page_allocator;

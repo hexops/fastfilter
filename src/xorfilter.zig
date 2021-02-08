@@ -2,6 +2,7 @@ const std = @import("std");
 const util = @import("util.zig");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
+const Error = util.Error;
 
 /// Xor8 is the recommended default, no more than a 0.3% false-positive probability.
 ///
@@ -79,7 +80,7 @@ pub fn Xor(comptime T: type) type {
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
         /// function call.
-        pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) !bool {
+        pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) Error!void {
             const iter = try util.sliceIterator(u64).init(allocator, keys);
             defer iter.destroy(allocator);
             return self.populateIter(allocator, iter);
@@ -93,7 +94,7 @@ pub fn Xor(comptime T: type) type {
         /// call leads to the first element again.
         ///
         /// `keys.len()` must return the `usize` length.
-        pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) !bool {
+        pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) Error!void {
             var rng_counter: u64 = 1;
             self.seed = util.rngSplitMix64(&rng_counter);
 
@@ -116,7 +117,7 @@ pub fn Xor(comptime T: type) type {
             var loop: usize = 0;
             while (true) : (loop += 1) {
                 if (loop + 1 > self.maxIterations) {
-                    return false; // too many iterations, keys are not unique.
+                    return Error.KeysLikelyNotUnique; // too many iterations, keys are not unique.
                 }
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
@@ -280,7 +281,7 @@ pub fn Xor(comptime T: type) type {
                 }
                 self.fingerprints[ki.index] = @truncate(T, val);
             }
-            return true;
+            return;
         }
 
         inline fn getH0H1H2(self: *Self, k: u64) Hashes {
@@ -348,8 +349,7 @@ fn xorTest(T: anytype, size: usize, sizeInBytes: usize) !void {
         keys[i] = i;
     }
 
-    var success = try filter.populate(allocator, keys[0..]);
-    testing.expect(success == true);
+    try filter.populate(allocator, keys[0..]);
 
     testing.expect(filter.contain(1) == true);
     testing.expect(filter.contain(5) == true);

@@ -2,6 +2,11 @@ const std = @import("std");
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
 
+pub const Error = error {
+    KeysLikelyNotUnique,
+    OutOfMemory,
+};
+
 pub inline fn murmur64(h: u64) u64 {
     var v = h;
     v ^= v >> 33;
