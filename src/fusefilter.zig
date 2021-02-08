@@ -20,7 +20,6 @@ pub const Fuse8 = Fuse(u8);
 /// We assume that you have a large set of 64-bit integers and you want a data structure to do
 /// membership tests using no more than ~8 or ~16 bits per key. If your initial set is made of
 /// strings or other types, you first need to hash them to a 64-bit integer.
-
 pub fn Fuse(comptime T: type) type {
     return struct {
         seed: u64,
@@ -283,7 +282,7 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "fuse4" {
-    try fuseTest(u4, 1000000/2, 568792);
+    try fuseTest(u4, 1000000 / 2, 568792);
 }
 
 test "fuse8" {
