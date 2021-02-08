@@ -3,11 +3,6 @@ const util = @import("util.zig");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
-// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
-//
-// TODO(slimsag): make configurable?
-const XOR_MAX_ITERATIONS = 100;
-
 /// Xor8 is the recommended default, no more than a 0.3% false-positive probability.
 ///
 /// See `Xor` for more details.
@@ -31,6 +26,9 @@ pub fn Xor(comptime T: type) type {
         seed: u64,
         blockLength: u64,
         fingerprints: []T, // has room for 3*blockLength values
+
+        /// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+        maxIterations: comptime usize = 100,
 
         const Self = @This();
 
@@ -76,7 +74,7 @@ pub fn Xor(comptime T: type) type {
         ///
         /// The caller is responsible for ensuring that there are no duplicated keys.
         ///
-        /// The inner loop will run up to XOR_MAX_ITERATIONS times (default 100) and should never fail,
+        /// The inner loop will run up to maxIterations (default 100) and should never fail,
         /// except if there are duplicated keys.
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
@@ -103,7 +101,7 @@ pub fn Xor(comptime T: type) type {
 
             var loop: usize = 0;
             while (true) : (loop += 1) {
-                if (loop + 1 > XOR_MAX_ITERATIONS) {
+                if (loop + 1 > self.maxIterations) {
                     return false; // too many iterations, keys are not unique.
                 }
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
@@ -327,6 +325,7 @@ const Keyindex = struct {
 fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Xor(T).init(allocator, size);
+    comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
     defer filter.deinit(allocator);
 
     var keys = try allocator.alloc(u64, size);
@@ -368,15 +367,15 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "xor8" {
-    try xorTest(u8, 10000, 12362);
+    try xorTest(u8, 10000, 12370);
 }
 
 test "xor16" {
-    try xorTest(u16, 10000, 24692);
+    try xorTest(u16, 10000, 24700);
 }
 
 test "xor20" {
-    try xorTest(u20, 10000, 49352);
+    try xorTest(u20, 10000, 49360);
 }
 
 test "xor32" {
@@ -386,7 +385,7 @@ test "xor32" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u32, 1000000, 4920152);
+    try xorTest(u32, 1000000, 4920160);
 }
 
 test "xor64" {
@@ -396,5 +395,5 @@ test "xor64" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u64, 1000000, 9840272);
+    try xorTest(u64, 1000000, 9840280);
 }
