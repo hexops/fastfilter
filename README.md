@@ -2,21 +2,30 @@
 
 [![CI](https://github.com/hexops/xorfilter/workflows/CI/badge.svg)](https://github.com/hexops/xorfilter/actions)
 
-This is a [Zig](https://ziglang.org) implementation of Xor Filters, which are faster and smaller than Bloom and Cuckoo filters and allow for quickly checking if a key is part of a set.
+This is a [Zig](https://ziglang.org) implementation of Xor Filters and Fuse Filters, which are faster and smaller than Bloom and Cuckoo filters and allow for quickly checking if a key is part of a set.
 
-The implementation implements two primarily useful algorithms:
+- [Benefits of Zig implementation](#benefits-of-zig-implementation)
+- [Research papers](#research-papers)
+- [Usage](#usage)
+- [Serialization](#serialization)
+- [Note about extremely large datasets](#note-about-extremely-large-datasets)
+- [Special thanks](#special-thanks)
 
-* xor8 (recommended, has no more than a 0.3% false-positive probability)
-* fuse8 (better than xor+ variants when you have > 100 million keys)
+## Benefits of Zig implementation
 
-Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, many more bit variants - any that is log2 - is supported via e.g. `Xor(u4)` or `Fuse(u4)`:
+The two primary algorithms of interest here are:
+
+* `Xor8` (recommended, has no more than a 0.3% false-positive probability)
+* `Fuse8` (better than xor+ variants when you have > 100 million keys)
+
+Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, many more bit variants - any that is log2 - is supported as well via e.g. `Xor(u4)` or `Fuse(u4)`:
 
 * xor4, xor16, xor32, xor64, etc.
 * fuse4, fuse16, etc.
 
 Note, however, that Zig represents e.g. `u4` as a full byte. The more exotic bit-widths `u4`, `u20`, etc. are primarily interesting for [more compact serialization](#serialization).
 
-## Research
+## Research papers
 
 Blog post: [Xor Filters: Faster and Smaller Than Bloom Filters](https://lemire.me/blog/2019/12/19/xor-filters-faster-and-smaller-than-bloom-filters).
 
@@ -32,7 +41,7 @@ described in "Dense Peelable Random Uniform Hypergraphs", can accomodate fill fa
 ## Usage
 
 1. Decide if you want to use `Xor8` or `Fuse8` (you probably want `Xor8`): ["Should I use xor filters or fuse filters?"](#should-i-use-xor-filters-or-fuse-filters).
-2. Convert your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first.
+2. Convert your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. "It is not important to have a good hash function, but collisions should be unlikely (~1/2^64)."
 3. Your keys must be unique, or else filter construction will fail. If you don't have unique keys, you can use the `xorfilter.AutoUnique(u64)(keys)` helper to deduplicate in typically O(N) time complexity, see the tests in `src/unique.zig` for more info.
 
 Here is an example:
@@ -95,6 +104,12 @@ Xor8 is the recommended default, and has no more than a 0.3% false-positive prob
 My _non-expert_ understanding is that fuse filters are more compressed and optimal than **xor+** filters with extremely large sets of keys based on[[1]](https://github.com/FastFilter/xor_singleheader/pull/11)[[2]](https://github.com/FastFilter/fastfilter_java/issues/21)[[3]](https://github.com/FastFilter/xorfilter/issues/5#issuecomment-569121442). You should use them in place of xor+, and refer to the xor filter paper for whether or not you are at a scale that requires xor+/fuse filters.
 
 **Note that the fuse filter algorithm does require a large number of unique keys in order for population to succeed**, see [FastFilter/xor_singleheader#21](https://github.com/FastFilter/xor_singleheader/issues/21) - if you have few (<~125k consecutive) keys creation will fail.
+
+## Note about extremely large datasets
+
+This implementation supports key iterators, so you do not need to have all of your keys in-memory, see `Xor8.populateIter` and `Fuse8.populateIter`.
+
+If you intend to use a xor filter with datasets of 100m+ keys, there is a possible faster implementation _for construction_ found in the C implementation [`xor8_buffered_populate`](https://github.com/FastFilter/xor_singleheader) which is not _yet_ implemented here.
 
 ## Special thanks
 
