@@ -3,11 +3,6 @@ const util = @import("util.zig");
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
 
-// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
-//
-// TODO(slimsag): make configurable?
-const XOR_MAX_ITERATIONS = 100;
-
 const FUSE_ARITY = 3;
 const FUSE_SEGMENT_COUNT = 100;
 const FUSE_SLOTS = FUSE_SEGMENT_COUNT + FUSE_ARITY - 1;
@@ -31,6 +26,9 @@ pub fn Fuse(comptime T: type) type {
         seed: u64,
         segmentLength: u64, // == slotCount / FUSE_SLOTS
         fingerprints: []T, // has room for 3*segmentLength values
+
+        /// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+        maxIterations: comptime usize = 100,
 
         const Self = @This();
 
@@ -78,7 +76,7 @@ pub fn Fuse(comptime T: type) type {
         ///
         /// The caller is responsible for ensuring that there are no duplicated keys.
         ///
-        /// The inner loop will run up to XOR_MAX_ITERATIONS times (default 100) and will never fail,
+        /// The inner loop will run up to maxIterations times (default 100) and will never fail,
         /// except if there are duplicated keys.
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
@@ -98,7 +96,7 @@ pub fn Fuse(comptime T: type) type {
 
             var loop: usize = 0;
             while (true) : (loop += 1) {
-                if (loop + 1 > XOR_MAX_ITERATIONS) {
+                if (loop + 1 > self.maxIterations) {
                     return false; // too many iterations, keys are not unique.
                 }
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
@@ -245,6 +243,7 @@ const Keyindex = struct {
 fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Fuse(T).init(allocator, size);
+    comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
     defer filter.deinit(allocator);
 
     var keys = try allocator.alloc(u64, size);
@@ -284,13 +283,13 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "fuse4" {
-    try fuseTest(u4, 1000000/2, 568784);
+    try fuseTest(u4, 1000000/2, 568792);
 }
 
 test "fuse8" {
-    try fuseTest(u8, 1000000, 1137638);
+    try fuseTest(u8, 1000000, 1137646);
 }
 
 test "fuse16" {
-    try fuseTest(u16, 1000000, 2275244);
+    try fuseTest(u16, 1000000, 2275252);
 }
