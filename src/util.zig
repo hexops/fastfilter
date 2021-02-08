@@ -12,7 +12,7 @@ pub inline fn murmur64(h: u64) u64 {
     return v;
 }
 
-pub inline fn mix_split(key: u64, seed: u64) u64 {
+pub inline fn mixSplit(key: u64, seed: u64) u64 {
     return murmur64(key +% seed);
 }
 
@@ -66,7 +66,7 @@ pub fn sliceIterator(comptime T: type) type {
 }
 
 // returns random number, modifies the seed.
-pub inline fn rng_splitmix64(seed: *u64) u64 {
+pub inline fn rngSplitMix64(seed: *u64) u64 {
     seed.* = seed.* +% 0x9E3779B97F4A7C15;
     var z = seed.*;
     z = (z ^ (z >> 30)) *% 0xBF58476D1CE4E5B9;
@@ -83,9 +83,9 @@ test "murmur64" {
     testing.expectEqual(@as(u64, 4139256335519489731), murmur64(0xFFFFFF + 918273987));
 }
 
-test "mix_split" {
+test "mixSplit" {
     // Arbitrarily chosen inputs for validation.
-    testing.expectEqual(@as(u64, 11156705658460211942), mix_split(0xF, 5));
+    testing.expectEqual(@as(u64, 11156705658460211942), mixSplit(0xF, 5));
 }
 
 test "rotl64" {
@@ -103,12 +103,12 @@ test "fingerprint" {
     testing.expectEqual(@as(u64, 1936547838), fingerprint(1936547838));
 }
 
-test "rng_splitmix64" {
+test "rngSplitMix64" {
     var seed: u64 = 13337;
-    var r = rng_splitmix64(&seed);
+    var r = rngSplitMix64(&seed);
     testing.expectEqual(@as(u64, 8862613829200693549), r);
-    r = rng_splitmix64(&seed);
+    r = rngSplitMix64(&seed);
     testing.expectEqual(@as(u64, 1009918040199880802), r);
-    r = rng_splitmix64(&seed);
+    r = rngSplitMix64(&seed);
     testing.expectEqual(@as(u64, 8603670078971061766), r);
 }
