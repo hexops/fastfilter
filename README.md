@@ -4,14 +4,17 @@
 
 This is a [Zig](https://ziglang.org) implementation of Xor Filters, which are faster and smaller than Bloom and Cuckoo filters and allow for quickly checking if a key is part of a set.
 
-The implementation provides:
+The implementation implements two primarily useful algorithms:
 
 * xor8 (recommended, has no more than a 0.3% false-positive probability)
-* xor16
-* xor32, xor64 (rarely needed)
 * fuse8 (better than xor+ variants when you have > 100 million keys)
 
-Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, this implementation is also able to support more specific variants of xor filters like xor4, xor6, xor10, xor12, or any other log2 bit size for xor keys via e.g. `Xor(u4)`. This can be interesting if you care about serialization size (but not memory, as Zig represents `u4` as a full byte.)
+Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, many more bit variants - any that is log2 - is supported via e.g. `Xor(u4)` or `Fuse(u4)`:
+
+* xor4, xor16, xor32, xor64, etc.
+* fuse4, fuse16, etc.
+
+Note, however, that Zig represents e.g. `u4` as a full byte. The more exotic bit-widths `u4`, `u20`, etc. are primarily interesting for [more compact serialization](#serialization).
 
 ## Research
 
