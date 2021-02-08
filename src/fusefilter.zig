@@ -81,6 +81,20 @@ pub fn Fuse(comptime T: type) type {
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
         /// function call.
         pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) !bool {
+            const iter = try util.sliceIterator(u64).init(allocator, keys);
+            defer iter.destroy(allocator);
+            return self.populateIter(allocator, iter);
+        }
+
+        /// Identical to populate, except it takes an iterator of keys so you need not store them
+        /// in-memory.
+        ///
+        /// `keys.next()` must return `?u64`, the next key or none if the end of the list has been
+        /// reached. The iterator must reset after hitting the end of the list, such that the `next()`
+        /// call leads to the first element again.
+        ///
+        /// `keys.len()` must return the `usize` length.
+        pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) !bool {
             var rng_counter: u64 = 1;
             self.seed = util.rng_splitmix64(&rng_counter);
 
@@ -90,7 +104,7 @@ pub fn Fuse(comptime T: type) type {
             var Q = try allocator.alloc(Keyindex, sets.len);
             defer allocator.free(Q);
 
-            var stack = try allocator.alloc(Keyindex, keys.len);
+            var stack = try allocator.alloc(Keyindex, keys.len());
             defer allocator.free(stack);
 
             var loop: usize = 0;
@@ -100,7 +114,7 @@ pub fn Fuse(comptime T: type) type {
                 }
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
-                for (keys) |key, i| {
+                while (keys.next()) |key| {
                     var hs = get_h0_h1_h2(self, key);
                     sets[hs.h0].fusemask ^= hs.h;
                     sets[hs.h0].count += 1;
@@ -159,14 +173,14 @@ pub fn Fuse(comptime T: type) type {
                         Qsize += 1;
                     }
                 }
-                if (stack_size == keys.len) {
+                if (stack_size == keys.len()) {
                     // success
                     break;
                 }
                 self.seed = util.rng_splitmix64(&rng_counter);
             }
 
-            var stack_size = keys.len;
+            var stack_size = keys.len();
             while (stack_size > 0) {
                 stack_size -= 1;
                 var ki = stack[stack_size];

@@ -1,5 +1,6 @@
 const std = @import("std");
 const testing = std.testing;
+const Allocator = std.mem.Allocator;
 
 pub inline fn murmur64(h: u64) u64 {
     var v = h;
@@ -26,6 +27,42 @@ pub inline fn reduce(hash: u32, n: u32) u32 {
 
 pub inline fn fingerprint(hash: u64) u64 {
     return hash ^ (hash >> 32);
+}
+
+pub fn sliceIterator(comptime T: type) type {
+    return struct {
+        slice: []T,
+        i: usize,
+
+        const Self = @This();
+
+        pub inline fn init(allocator: *Allocator, slice: []T) !*Self {
+            const self = try allocator.create(Self);
+            self.* = Self{
+                .i = 0,
+                .slice = slice,
+            };
+            return self;
+        }
+
+        pub inline fn destroy(self: *Self, allocator: *Allocator) void {
+            allocator.destroy(self);
+        }
+
+        pub inline fn next(self: *Self) ?T {
+            if (self.i >= self.slice.len) {
+                self.i = 0;
+                return null;
+            }
+            const v = self.slice[self.i];
+            self.i += 1;
+            return v;
+        }
+
+        pub inline fn len(self: *Self) usize {
+            return self.slice.len;
+        }
+    };
 }
 
 // returns random number, modifies the seed.
