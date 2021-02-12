@@ -112,6 +112,85 @@ This implementation supports key iterators, so you do not need to have all of yo
 
 If you intend to use a xor filter with datasets of 100m+ keys, there is a possible faster implementation _for construction_ found in the C implementation [`xor8_buffered_populate`](https://github.com/FastFilter/xor_singleheader) which is not _yet_ implemented here.
 
+## Benchmarks
+
+Benchmarks were ran on both a 2019 Macbook Pro and Windows 10 (WSL2) desktop machine using e.g.:
+
+```
+zig run -O ReleaseFast src/benchmark.zig -- --xor 8 --num-keys 1000000
+```
+
+<details>
+<summary><strong>Benchmarks:</strong> 2019 Macbook Pro (1M - 100M keys)</summary>
+
+* CPU: 2.3Ghz Intel Core i9
+* Memory: 16 GB 2667 MHz DDR4
+* Zig version: ``0.8.0-dev.1032+8098b3f84`
+
+| Algorithm | # of keys | populate | time per containment check | fpp (estimated) | bits per entry (memory) |
+|-----------|-----------|----------|----------------------------|-----------------|-------------------------|
+| xor4      | 1M        | 92ms     | 28ns/check                 | 0.0625333000    | 9.8                     |
+| xor8      | 1M        | 124ms    | 29ns/check                 | 0.0039010000    | 9.8                     |
+| xor16     | 1M        | 106ms    | 30ns/check                 | 0.0000140000    | 19.7                    |
+| xor32     | 1M        | 99ms     | 33ns/check                 | 0.0000000000    | 39.4                    |
+| fuse8     | 1M        | 96ms     | 28ns/check                 | 0.0039010000    | 9.8                     |
+| fuse16    | 1M        | 93ms     | 30ns/check                 | 0.0000140000    | 19.7                    |
+|           |           |          |                            |                 |                         |
+| xor4      | 10M       | 1.6s     | 90ns/check                 | 0.0626137000    | 9.8                     |
+| xor8      | 10M       | 1.6s     | 89ns/check                 | 0.0039369000    | 9.8                     |
+| xor16     | 10M       | 1.6s     | 105ns/check                | 0.0000173000    | 19.7                    |
+| xor32     | 10M       | 1.6s     | 119ns/check                | 0.0000000000    | 39.4                    |
+| fuse8     | 10M       | 1.6s     | 92ns/check                 | 0.0039369000    | 9.8                     |
+| fuse16    | 10M       | 1.6s     | 113ns/check                | 0.0000173000    | 19.7                    |
+|           |           |          |                            |                 |                         |
+| xor4      | 100M      | 23s      | 128ns/check                | 0.0625772000    | 9.8                     |
+| xor8      | 100M      | 20s      | 125ns/check                | 0.0039238000    | 9.8                     |
+| xor16     | 100M      | 21s      | 136ns/check                | 0.0000147000    | 19.7                    |
+| xor32     | 100M      | 22s      | 135ns/check                | 0.0000000000    | 39.4                    |
+| fuse8     | 100M      | 21s      | 124ns/check                | 0.0039238000    | 9.8                     |
+| fuse16    | 100M      | 22s      | 126ns/check                | 0.0000147000    | 19.7                    |
+
+</details>
+
+<details>
+<summary><strong>Benchmarks:</strong> Windows 10 WSL2 Desktop (1M - 250M keys)</summary>
+
+* CPU: 3.79Ghz AMD Ryzen 9 3900X
+* Memory: 32 GB 2133 MHz DDR4
+* Zig version: ``0.8.0-dev.1039+bea791b63`
+
+| Algorithm | # of keys | populate | time per containment check | fpp (estimated) | bits per entry (memory) |
+|-----------|-----------|----------|----------------------------|-----------------|-------------------------|
+| xor4      | 1M        | 112ms    | 23ns/check                 | 0.0625333000    | 9.8                     |
+| xor8      | 1M        | 112ms    | 23ns/check                 | 0.0039010000    | 9.8                     |
+| xor16     | 1M        | 117ms    | 24ns/check                 | 0.0000140000    | 19.7                    |
+| xor32     | 1M        | 119ms    | 25ns/check                 | 0.0000000000    | 39.4                    |
+| fuse8     | 1M        | 112ms    | 23ns/check                 | 0.0039010000    | 9.8                     |
+| fuse16    | 1M        | 115ms    | 24ns/check                 | 0.0000140000    | 19.7                    |
+|           |           |          |                            |                 |                         |
+| xor4      | 10M       | 1.6s     | 39ns/check                 | 0.0626137000    | 9.8                     |
+| xor8      | 10M       | 1.6s     | 38ns/check                 | 0.0039369000    | 9.8                     |
+| xor16     | 10M       | 1.7s     | 126ns/check                | 0.0000173000    | 19.7                    |
+| xor32     | 10M       | 1.8s     | 158ns/check                | 0.0000000000    | 39.4                    |
+| fuse8     | 10M       | 1.6s     | 38ns/check                 | 0.0039369000    | 9.8                     |
+| fuse16    | 10M       | 1.7s     | 127ns/check                | 0.0000173000    | 19.7                    |
+|           |           |          |                            |                 |                         |
+| xor4      | 100M      | 21s      | 175ns/check                | 0.0625772000    | 9.8                     |
+| xor8      | 100M      | 20s      | 175ns/check                | 0.0039238000    | 9.8                     |
+| xor16     | 100M      | 20s      | 180ns/check                | 0.0000147000    | 19.7                    |
+| xor32     | 100M      | 20s      | 190ns/check                | 0.0000000000    | 39.4                    |
+| fuse8     | 100M      | 20s      | 181ns/check                | 0.0039238000    | 9.8                     |
+| fuse16    | 100M      | 20s      | 183ns/check                | 0.0000147000    | 19.7                    |
+|           |           |          |                            |                 |                         |
+| xor4      | 250M      | 1.1min   | 194ns/check                | 0.0625503000    | 9.8                     |
+| xor8      | 250M      | 1.2min   | 190ns/check                | 0.0038876000    | 9.8                     |
+| xor16     | 250M      | 1.2min   | 196ns/check                | 0.0000125000    | 19.7                    |
+| xor32     | 250M      | 1.1min   | 203ns/check                | 0.0000000000    | 39.4                    |
+| fuse8     | 250M      | 1.1min   | 199ns/check                | 0.0038876000    | 9.8                     |
+| fuse16    | 250M      | 1.1min   | 203ns/check                | 0.0000125000    | 19.7                    |
+
+</details>
+
 ## Special thanks
 
 * [**Thomas Mueller Graf**](https://github.com/thomasmueller) and [**Daniel Lemire**](https://github.com/lemire) - _for their excellent research into xor filters, xor+ filters, their C implementation, and more._
