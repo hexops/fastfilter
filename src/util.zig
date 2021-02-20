@@ -36,6 +36,7 @@ pub fn fingerprint(hash: u64) callconv(.Inline) u64 {
 
 pub fn sliceIterator(comptime T: type) type {
     return struct {
+        allocator: *Allocator,
         slice: []T,
         i: usize,
 
@@ -44,14 +45,15 @@ pub fn sliceIterator(comptime T: type) type {
         pub fn init(allocator: *Allocator, slice: []T) callconv(.Inline) !*Self {
             const self = try allocator.create(Self);
             self.* = Self{
+                .allocator = allocator,
                 .i = 0,
                 .slice = slice,
             };
             return self;
         }
 
-        pub fn destroy(self: *Self, allocator: *Allocator) callconv(.Inline) void {
-            allocator.destroy(self);
+        pub fn deinit(self: *Self) callconv(.Inline) void {
+            self.allocator.destroy(self);
         }
 
         pub fn next(self: *Self) callconv(.Inline) ?T {

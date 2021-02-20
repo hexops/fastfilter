@@ -24,6 +24,7 @@ pub const Xor16 = Xor(u16);
 /// Xor8 is the recommended default, no more than a 0.3% false-positive probability.
 pub fn Xor(comptime T: type) type {
     return struct {
+        allocator: *Allocator,
         seed: u64,
         blockLength: u64,
         fingerprints: []T, // has room for 3*blockLength values
@@ -35,12 +36,13 @@ pub fn Xor(comptime T: type) type {
 
         /// initializes a Xor filter with enough capacity for a set containing up to `size` elements.
         ///
-        /// `destroy(allocator)` must be called by the caller to free the memory.
+        /// `deinit()` must be called by the caller to free the memory.
         pub fn init(allocator: *Allocator, size: usize) !*Self {
             const self = try allocator.create(Self);
             var capacity = @floatToInt(usize, 32 + 1.23 * @intToFloat(f64, size));
             capacity = capacity / 3 * 3;
             self.* = Self{
+                .allocator = allocator,
                 .seed = 0,
                 .fingerprints = try allocator.alloc(T, capacity),
                 .blockLength = capacity / 3,
@@ -48,8 +50,8 @@ pub fn Xor(comptime T: type) type {
             return self;
         }
 
-        pub fn destroy(self: *Self, allocator: *Allocator) callconv(.Inline) void {
-            allocator.destroy(self);
+        pub fn deinit(self: *Self) callconv(.Inline) void {
+            self.allocator.destroy(self);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
@@ -82,7 +84,7 @@ pub fn Xor(comptime T: type) type {
         /// function call.
         pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) Error!void {
             const iter = try util.sliceIterator(u64).init(allocator, keys);
-            defer iter.destroy(allocator);
+            defer iter.deinit();
             return self.populateIter(allocator, iter);
         }
 
@@ -341,7 +343,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Xor(T).init(allocator, size);
     comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
-    defer filter.destroy(allocator);
+    defer filter.deinit();
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
@@ -381,15 +383,15 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "xor8" {
-    try xorTest(u8, 10000, 12370);
+    try xorTest(u8, 10000, 12378);
 }
 
 test "xor16" {
-    try xorTest(u16, 10000, 24700);
+    try xorTest(u16, 10000, 24708);
 }
 
 test "xor20" {
-    try xorTest(u20, 10000, 49360);
+    try xorTest(u20, 10000, 49368);
 }
 
 test "xor32" {
@@ -399,7 +401,7 @@ test "xor32" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u32, 1000000, 4920160);
+    try xorTest(u32, 1000000, 4920168);
 }
 
 test "xor64" {
@@ -409,5 +411,5 @@ test "xor64" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u64, 1000000, 9840280);
+    try xorTest(u64, 1000000, 9840288);
 }

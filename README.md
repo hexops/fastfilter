@@ -56,7 +56,7 @@ test "mytest" {
     // Initialize the xor filter with room for 10000 keys.
     const size = 10000; // room for 10000 keys
     const filter = try xorfilter.Xor8.init(allocator, size);
-    defer filter.deinit(allocator);
+    defer filter.deinit();
 
     // Generate some consecutive keys.
     var keys = try allocator.alloc(u64, size);
@@ -68,9 +68,8 @@ test "mytest" {
     // If your keys are not unique, make them so:
     keys = xorfilter.Unique(u64)(keys);
 
-    // If this fails, your keys are not unique.
-    var success = try filter.populate(allocator, keys[0..]);
-    testing.expect(success == true);
+    // If this fails, your keys are not unique or allocation failed.
+    try filter.populate(allocator, keys[0..]);
 
     // Now we can quickly test for containment!
     testing.expect(filter.contain(1) == true);

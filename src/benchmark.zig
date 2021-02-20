@@ -31,7 +31,7 @@ fn xorBench(T: anytype, size: usize, trials: usize) !void {
     // Initialize filter.
     var start = timer.lap();
     const filter = try xorfilter.Xor(T).init(allocator, size);
-    defer filter.destroy(allocator);
+    defer filter.deinit();
     var end = timer.read();
     try stdout.print("init:\t", .{});
     try formatTime(stdout, start, end, 1);
