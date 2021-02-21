@@ -52,7 +52,7 @@ pub fn Fuse(comptime T: type) type {
         }
 
         /// reports if the specified key is within the set with false-positive rate.
-        pub inline fn contain(self: *Self, key: u64) bool {
+        pub fn contain(self: *Self, key: u64) callconv(.Inline) bool {
             var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
@@ -68,7 +68,7 @@ pub fn Fuse(comptime T: type) type {
         }
 
         /// reports the size in bytes of the filter.
-        pub inline fn sizeInBytes(self: *Self) usize {
+        pub fn sizeInBytes(self: *Self) callconv(.Inline) usize {
             return FUSE_SLOTS * self.segmentLength * @sizeOf(T) + @sizeOf(Self);
         }
 
@@ -199,7 +199,7 @@ pub fn Fuse(comptime T: type) type {
             return;
         }
 
-        inline fn getH0H1H2(self: *Self, k: u64) Hashes {
+        fn getH0H1H2(self: *Self, k: u64) callconv(.Inline) Hashes {
             var hash = util.mixSplit(k, self.seed);
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
@@ -215,7 +215,7 @@ pub fn Fuse(comptime T: type) type {
             };
         }
 
-        inline fn getJustH0H1H2(self: *Self, hash: u64) H0h1h2 {
+        fn getJustH0H1H2(self: *Self, hash: u64) callconv(.Inline) H0h1h2 {
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             var r2 = @truncate(u32, util.rotl64(hash, 42));

@@ -48,12 +48,12 @@ pub fn Xor(comptime T: type) type {
             return self;
         }
 
-        pub inline fn destroy(self: *Self, allocator: *Allocator) void {
+        pub fn destroy(self: *Self, allocator: *Allocator) callconv(.Inline) void {
             allocator.destroy(self);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
-        pub inline fn contain(self: *Self, key: u64) bool {
+        pub fn contain(self: *Self, key: u64) callconv(.Inline) bool {
             var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
@@ -67,7 +67,7 @@ pub fn Xor(comptime T: type) type {
         }
 
         /// reports the size in bytes of the filter.
-        pub inline fn sizeInBytes(self: *Self) usize {
+        pub fn sizeInBytes(self: *Self) callconv(.Inline) usize {
             return 3 * self.blockLength * @sizeOf(T) + @sizeOf(Self);
         }
 
@@ -284,7 +284,7 @@ pub fn Xor(comptime T: type) type {
             return;
         }
 
-        inline fn getH0H1H2(self: *Self, k: u64) Hashes {
+        fn getH0H1H2(self: *Self, k: u64) callconv(.Inline) Hashes {
             var hash = util.mixSplit(k, self.seed);
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
@@ -297,17 +297,17 @@ pub fn Xor(comptime T: type) type {
             };
         }
 
-        inline fn getH0(self: *Self, hash: u64) u32 {
+        fn getH0(self: *Self, hash: u64) callconv(.Inline) u32 {
             var r0 = @truncate(u32, hash);
             return util.reduce(r0, @truncate(u32, self.blockLength));
         }
 
-        inline fn getH1(self: *Self, hash: u64) u32 {
+        fn getH1(self: *Self, hash: u64) callconv(.Inline) u32 {
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             return util.reduce(r1, @truncate(u32, self.blockLength));
         }
 
-        inline fn getH2(self: *Self, hash: u64) u32 {
+        fn getH2(self: *Self, hash: u64) callconv(.Inline) u32 {
             var r2 = @truncate(u32, util.rotl64(hash, 42));
             return util.reduce(r2, @truncate(u32, self.blockLength));
         }
