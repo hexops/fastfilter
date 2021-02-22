@@ -23,6 +23,7 @@ pub const Fuse8 = Fuse(u8);
 /// strings or other types, you first need to hash them to a 64-bit integer.
 pub fn Fuse(comptime T: type) type {
     return struct {
+        allocator: *Allocator,
         seed: u64,
         segmentLength: u64, // == slotCount / FUSE_SLOTS
         fingerprints: []T, // has room for 3*segmentLength values
@@ -34,12 +35,13 @@ pub fn Fuse(comptime T: type) type {
 
         /// initializes a fuse filter with enough capacity for a set containing up to `size` elements.
         ///
-        /// `destroy(allocator)` must be called by the caller to free the memory.
+        /// `deinit()` must be called by the caller to free the memory.
         pub fn init(allocator: *Allocator, size: usize) !*Self {
             const self = try allocator.create(Self);
             var capacity = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
             capacity = capacity / FUSE_SLOTS * FUSE_SLOTS;
             self.* = Self{
+                .allocator = allocator,
                 .seed = 0,
                 .fingerprints = try allocator.alloc(T, capacity),
                 .segmentLength = capacity / FUSE_SLOTS,
@@ -47,8 +49,8 @@ pub fn Fuse(comptime T: type) type {
             return self;
         }
 
-        pub fn destroy(self: *Self, allocator: *Allocator) void {
-            allocator.destroy(self);
+        pub fn deinit(self: *Self) callconv(.Inline) void {
+            self.allocator.destroy(self);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
@@ -83,7 +85,7 @@ pub fn Fuse(comptime T: type) type {
         /// function call.
         pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) Error!void {
             const iter = try util.sliceIterator(u64).init(allocator, keys);
-            defer iter.destroy(allocator);
+            defer iter.deinit();
             return self.populateIter(allocator, iter);
         }
 
@@ -258,7 +260,7 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Fuse(T).init(allocator, size);
     comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
-    defer filter.destroy(allocator);
+    defer filter.deinit();
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
@@ -296,13 +298,13 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "fuse4" {
-    try fuseTest(u4, 1000000 / 2, 568792);
+    try fuseTest(u4, 1000000 / 2, 568800);
 }
 
 test "fuse8" {
-    try fuseTest(u8, 1000000, 1137646);
+    try fuseTest(u8, 1000000, 1137654);
 }
 
 test "fuse16" {
-    try fuseTest(u16, 1000000, 2275252);
+    try fuseTest(u16, 1000000, 2275260);
 }
