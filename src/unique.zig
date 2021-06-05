@@ -107,7 +107,7 @@ test "AutoUnique_simple" {
     var array = [_]i32{ 1, 2, 2, 3, 3, 4, 2, 1, 4, 1, 2, 3, 4, 4, 3, 2, 1 };
     const unique = AutoUnique(i32)(array[0..]);
     const expected = &[_]i32{ 1, 4, 3, 2 };
-    testing.expectEqualSlices(i32, expected, unique);
+    try testing.expectEqualSlices(i32, expected, unique);
 }
 
 test "AutoUnique_complex" {
@@ -125,5 +125,5 @@ test "AutoUnique_complex" {
     }
 
     const unique = AutoUnique(u64)(keys[0..]);
-    testing.expect(unique.len == size);
+    try testing.expect(unique.len == size);
 }

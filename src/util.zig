@@ -83,39 +83,39 @@ pub fn rngSplitMix64(seed: *u64) callconv(.Inline) u64 {
 
 test "murmur64" {
     // Arbitrarily chosen inputs for validation.
-    testing.expectEqual(@as(u64, 11156705658460211942), murmur64(0xF + 5));
-    testing.expectEqual(@as(u64, 9276143743022464963), murmur64(0xFF + 123));
-    testing.expectEqual(@as(u64, 9951468085874665196), murmur64(0xFFF + 1337));
-    testing.expectEqual(@as(u64, 4797998644499646477), murmur64(0xFFFF + 143));
-    testing.expectEqual(@as(u64, 4139256335519489731), murmur64(0xFFFFFF + 918273987));
+    try testing.expectEqual(@as(u64, 11156705658460211942), murmur64(0xF + 5));
+    try testing.expectEqual(@as(u64, 9276143743022464963), murmur64(0xFF + 123));
+    try testing.expectEqual(@as(u64, 9951468085874665196), murmur64(0xFFF + 1337));
+    try testing.expectEqual(@as(u64, 4797998644499646477), murmur64(0xFFFF + 143));
+    try testing.expectEqual(@as(u64, 4139256335519489731), murmur64(0xFFFFFF + 918273987));
 }
 
 test "mixSplit" {
     // Arbitrarily chosen inputs for validation.
-    testing.expectEqual(@as(u64, 11156705658460211942), mixSplit(0xF, 5));
+    try testing.expectEqual(@as(u64, 11156705658460211942), mixSplit(0xF, 5));
 }
 
 test "rotl64" {
     // Arbitrarily chosen inputs for validation.
-    testing.expectEqual(@as(u64, 193654783976931328), rotl64(43, 52));
+    try testing.expectEqual(@as(u64, 193654783976931328), rotl64(43, 52));
 }
 
 test "reduce" {
     // Arbitrarily chosen inputs for validation.
-    testing.expectEqual(@as(u32, 8752776), reduce(1936547838, 19412321));
+    try testing.expectEqual(@as(u32, 8752776), reduce(1936547838, 19412321));
 }
 
 test "fingerprint" {
     // Arbitrarily chosen inputs for validation.
-    testing.expectEqual(@as(u64, 1936547838), fingerprint(1936547838));
+    try testing.expectEqual(@as(u64, 1936547838), fingerprint(1936547838));
 }
 
 test "rngSplitMix64" {
     var seed: u64 = 13337;
     var r = rngSplitMix64(&seed);
-    testing.expectEqual(@as(u64, 8862613829200693549), r);
+    try testing.expectEqual(@as(u64, 8862613829200693549), r);
     r = rngSplitMix64(&seed);
-    testing.expectEqual(@as(u64, 1009918040199880802), r);
+    try testing.expectEqual(@as(u64, 1009918040199880802), r);
     r = rngSplitMix64(&seed);
-    testing.expectEqual(@as(u64, 8603670078971061766), r);
+    try testing.expectEqual(@as(u64, 8603670078971061766), r);
 }

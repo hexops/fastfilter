@@ -270,14 +270,14 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     try filter.populate(allocator, keys[0..]);
 
-    testing.expect(filter.contain(1) == true);
-    testing.expect(filter.contain(5) == true);
-    testing.expect(filter.contain(9) == true);
-    testing.expect(filter.contain(1234) == true);
-    testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
+    try testing.expect(filter.contain(1) == true);
+    try testing.expect(filter.contain(5) == true);
+    try testing.expect(filter.contain(9) == true);
+    try testing.expect(filter.contain(1234) == true);
+    try testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
 
     for (keys) |key| {
-        testing.expect(filter.contain(key) == true);
+        try testing.expect(filter.contain(key) == true);
     }
 
     var random_matches: u64 = 0;
