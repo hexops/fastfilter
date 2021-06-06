@@ -4,12 +4,16 @@ const testing = std.testing;
 // The same as `AutoUnique`, but accepts custom hash and equality functions.
 pub fn Unique(
     comptime T: type,
-    comptime hash: fn (key: T) u64,
-    comptime eql: fn (a: T, b: T) bool,
-) comptime fn ([]T) []T {
+    comptime Context: type,
+    comptime hash: fn (
+        ctx: Context,
+        key: T,
+    ) u64,
+    comptime eql: fn (ctx: Context, a: T, b: T) bool,
+) comptime fn (Context, []T) []T {
     return struct {
-        pub fn inPlace(data: []T) []T {
-            return doInPlace(data, 0);
+        pub fn inPlace(ctx: Context, data: []T) []T {
+            return doInPlace(ctx, data, 0);
         }
 
         fn swap(data: []T, i: usize, j: usize) void {
@@ -18,7 +22,7 @@ pub fn Unique(
             data[j] = tmp;
         }
 
-        fn doInPlace(dataIn: []T, start: usize) []T {
+        fn doInPlace(ctx: Context, dataIn: []T, start: usize) []T {
             if (dataIn.len - start < 2) {
                 return dataIn;
             }
@@ -28,30 +32,30 @@ pub fn Unique(
 
             var index: usize = 0;
             while (index < data.len) {
-                if (eql(data[index], sentinel)) {
+                if (eql(ctx, data[index], sentinel)) {
                     index += 1;
                     continue;
                 }
 
-                const hsh = hash(data[index]) % data.len;
+                const hsh = hash(ctx, data[index]) % data.len;
                 if (index == hsh) {
                     index += 1;
                     continue;
                 }
 
-                if (eql(data[index], data[hsh])) {
+                if (eql(ctx, data[index], data[hsh])) {
                     data[index] = sentinel;
                     index += 1;
                     continue;
                 }
 
-                if (eql(data[hsh], sentinel)) {
+                if (eql(ctx, data[hsh], sentinel)) {
                     swap(data, hsh, index);
                     index += 1;
                     continue;
                 }
 
-                const hashHash = hash(data[hsh]) % data.len;
+                const hashHash = hash(ctx, data[hsh]) % data.len;
                 if (hashHash != hsh) {
                     swap(data, index, hsh);
                     if (hsh < index) {
@@ -64,7 +68,7 @@ pub fn Unique(
 
             var swapPos: usize = 0;
             for (data) |v, i| {
-                if ((!eql(v, sentinel)) and (i == (hash(v) % data.len))) {
+                if ((!eql(ctx, v, sentinel)) and (i == (hash(ctx, v) % data.len))) {
                     swap(data, i, swapPos);
                     swapPos += 1;
                 }
@@ -73,7 +77,7 @@ pub fn Unique(
             var sentinelPos: usize = data.len;
             var i = swapPos;
             while (i < sentinelPos) {
-                if (eql(data[i], sentinel)) {
+                if (eql(ctx, data[i], sentinel)) {
                     sentinelPos -= 1;
                     swap(data, i, sentinelPos);
                 } else {
@@ -81,7 +85,7 @@ pub fn Unique(
                 }
             }
 
-            return doInPlace(dataIn[0 .. sentinelPos + start + 1], start + swapPos + 1);
+            return doInPlace(ctx, dataIn[0 .. sentinelPos + start + 1], start + swapPos + 1);
         }
     }.inPlace;
 }
@@ -99,13 +103,18 @@ pub fn Unique(
 /// To hash T and perform equality checks of T, `std.hash_map.getAutoHashFn` and
 /// `std.hash_map.getAutoEqlFn` are used, which support most data types. Use `Unique` if you need
 /// to use your own hash and equality functions.
-pub fn AutoUnique(comptime T: type) fn ([]T) []T {
-    return comptime Unique(T, std.hash_map.getAutoHashFn(T), std.hash_map.getAutoEqlFn(T));
+pub fn AutoUnique(comptime T: type, comptime Context: type) fn (void, []T) []T {
+    return comptime Unique(
+        T,
+        Context,
+        std.hash_map.getAutoHashFn(T, Context),
+        std.hash_map.getAutoEqlFn(T, Context),
+    );
 }
 
 test "AutoUnique_simple" {
     var array = [_]i32{ 1, 2, 2, 3, 3, 4, 2, 1, 4, 1, 2, 3, 4, 4, 3, 2, 1 };
-    const unique = AutoUnique(i32)(array[0..]);
+    const unique = AutoUnique(i32, void)({}, array[0..]);
     const expected = &[_]i32{ 1, 4, 3, 2 };
     try testing.expectEqualSlices(i32, expected, unique);
 }
@@ -124,6 +133,6 @@ test "AutoUnique_complex" {
         keys[i + 2] = i % size;
     }
 
-    const unique = AutoUnique(u64)(keys[0..]);
+    const unique = AutoUnique(u64, void)({}, keys[0..]);
     try testing.expect(unique.len == size);
 }

@@ -24,5 +24,5 @@ test "exports" {
     defer xor16Filter.deinit();
 
     var array = [_]i32{ 1, 2, 2 };
-    const unique = AutoUnique(i32)(array[0..]);
+    const unique = AutoUnique(i32, void)({}, array[0..]);
 }

@@ -50,12 +50,12 @@ pub fn Xor(comptime T: type) type {
             return self;
         }
 
-        pub fn deinit(self: *Self) callconv(.Inline) void {
+        pub inline fn deinit(self: *Self) void {
             self.allocator.destroy(self);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
-        pub fn contain(self: *Self, key: u64) callconv(.Inline) bool {
+        pub inline fn contain(self: *Self, key: u64) bool {
             var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
@@ -69,7 +69,7 @@ pub fn Xor(comptime T: type) type {
         }
 
         /// reports the size in bytes of the filter.
-        pub fn sizeInBytes(self: *Self) callconv(.Inline) usize {
+        pub inline fn sizeInBytes(self: *Self) usize {
             return 3 * self.blockLength * @sizeOf(T) + @sizeOf(Self);
         }
 
@@ -286,7 +286,7 @@ pub fn Xor(comptime T: type) type {
             return;
         }
 
-        fn getH0H1H2(self: *Self, k: u64) callconv(.Inline) Hashes {
+        inline fn getH0H1H2(self: *Self, k: u64) Hashes {
             var hash = util.mixSplit(k, self.seed);
             var r0 = @truncate(u32, hash);
             var r1 = @truncate(u32, util.rotl64(hash, 21));
@@ -299,17 +299,17 @@ pub fn Xor(comptime T: type) type {
             };
         }
 
-        fn getH0(self: *Self, hash: u64) callconv(.Inline) u32 {
+        inline fn getH0(self: *Self, hash: u64) u32 {
             var r0 = @truncate(u32, hash);
             return util.reduce(r0, @truncate(u32, self.blockLength));
         }
 
-        fn getH1(self: *Self, hash: u64) callconv(.Inline) u32 {
+        inline fn getH1(self: *Self, hash: u64) u32 {
             var r1 = @truncate(u32, util.rotl64(hash, 21));
             return util.reduce(r1, @truncate(u32, self.blockLength));
         }
 
-        fn getH2(self: *Self, hash: u64) callconv(.Inline) u32 {
+        inline fn getH2(self: *Self, hash: u64) u32 {
             var r2 = @truncate(u32, util.rotl64(hash, 42));
             return util.reduce(r2, @truncate(u32, self.blockLength));
         }

@@ -7,7 +7,7 @@ pub const Error = error{
     OutOfMemory,
 };
 
-pub fn murmur64(h: u64) callconv(.Inline) u64 {
+pub inline fn murmur64(h: u64) u64 {
     var v = h;
     v ^= v >> 33;
     v *%= 0xff51afd7ed558ccd;
@@ -17,20 +17,20 @@ pub fn murmur64(h: u64) callconv(.Inline) u64 {
     return v;
 }
 
-pub fn mixSplit(key: u64, seed: u64) callconv(.Inline) u64 {
+pub inline fn mixSplit(key: u64, seed: u64) u64 {
     return murmur64(key +% seed);
 }
 
-pub fn rotl64(n: u64, c: usize) callconv(.Inline) u64 {
+pub inline fn rotl64(n: u64, c: usize) u64 {
     return (n << @intCast(u6, c & 63)) | (n >> @intCast(u6, (-%c) & 63));
 }
 
-pub fn reduce(hash: u32, n: u32) callconv(.Inline) u32 {
+pub inline fn reduce(hash: u32, n: u32) u32 {
     // http://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction
     return @truncate(u32, (@intCast(u64, hash) *% @intCast(u64, n)) >> 32);
 }
 
-pub fn fingerprint(hash: u64) callconv(.Inline) u64 {
+pub inline fn fingerprint(hash: u64) u64 {
     return hash ^ (hash >> 32);
 }
 
@@ -42,7 +42,7 @@ pub fn sliceIterator(comptime T: type) type {
 
         const Self = @This();
 
-        pub fn init(allocator: *Allocator, slice: []T) callconv(.Inline) !*Self {
+        pub inline fn init(allocator: *Allocator, slice: []T) !*Self {
             const self = try allocator.create(Self);
             self.* = Self{
                 .allocator = allocator,
@@ -52,11 +52,11 @@ pub fn sliceIterator(comptime T: type) type {
             return self;
         }
 
-        pub fn deinit(self: *Self) callconv(.Inline) void {
+        pub inline fn deinit(self: *Self) void {
             self.allocator.destroy(self);
         }
 
-        pub fn next(self: *Self) callconv(.Inline) ?T {
+        pub inline fn next(self: *Self) ?T {
             if (self.i >= self.slice.len) {
                 self.i = 0;
                 return null;
@@ -66,14 +66,14 @@ pub fn sliceIterator(comptime T: type) type {
             return v;
         }
 
-        pub fn len(self: *Self) callconv(.Inline) usize {
+        pub inline fn len(self: *Self) usize {
             return self.slice.len;
         }
     };
 }
 
 // returns random number, modifies the seed.
-pub fn rngSplitMix64(seed: *u64) callconv(.Inline) u64 {
+pub inline fn rngSplitMix64(seed: *u64) u64 {
     seed.* = seed.* +% 0x9E3779B97F4A7C15;
     var z = seed.*;
     z = (z ^ (z >> 30)) *% 0xBF58476D1CE4E5B9;
