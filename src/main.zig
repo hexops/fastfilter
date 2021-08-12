@@ -6,7 +6,7 @@ pub const Xor8 = @import("xorfilter.zig").Xor8;
 pub const Xor16 = @import("xorfilter.zig").Xor16;
 pub const AutoUnique = @import("unique.zig").AutoUnique;
 pub const Unique = @import("unique.zig").Unique;
-pub const Error = @import("utils.zig").Error;
+pub const Error = @import("util.zig").Error;
 
 test "exports" {
     const allocator = std.heap.page_allocator;
@@ -24,5 +24,5 @@ test "exports" {
     defer xor16Filter.deinit();
 
     var array = [_]i32{ 1, 2, 2 };
-    const unique = AutoUnique(i32, void)({}, array[0..]);
+    _ = AutoUnique(i32, void)({}, array[0..]);
 }

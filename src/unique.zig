@@ -10,7 +10,7 @@ pub fn Unique(
         key: T,
     ) u64,
     comptime eql: fn (ctx: Context, a: T, b: T) bool,
-) comptime fn (Context, []T) []T {
+) fn (Context, []T) []T {
     return struct {
         pub fn inPlace(ctx: Context, data: []T) []T {
             return doInPlace(ctx, data, 0);

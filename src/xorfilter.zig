@@ -30,7 +30,7 @@ pub fn Xor(comptime T: type) type {
         fingerprints: []T, // has room for 3*blockLength values
 
         /// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
-        maxIterations: comptime usize = 100,
+        maxIterations: usize = 100,
 
         const Self = @This();
 
@@ -347,7 +347,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
-    for (keys) |key, i| {
+    for (keys) |_, i| {
         keys[i] = i;
     }
 

@@ -10,7 +10,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.9.0-dev.6+1aeee8034.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://ziglang.org/builds/zig-linux-x86_64-0.9.0-dev.749+259f3458a.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: Install Task
         run: sudo sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
       - run: task lint
