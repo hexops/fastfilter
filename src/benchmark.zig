@@ -1,70 +1,83 @@
-// zig run -O ReleaseFast src/benchmark.zig -- --xor 8 --num-keys 1000000 --num-trials 10000000
+// zig run -O ReleaseFast src/benchmark.zig
 
 const std = @import("std");
 const time = std.time;
 const Timer = time.Timer;
 const xorfilter = @import("main.zig");
+const MeasuredAllocator = @import("MeasuredAllocator.zig");
 
-fn formatTime(writer: anytype, start: u64, end: u64, division: usize) !void {
+fn formatTime(writer: anytype, comptime spec: []const u8, start: u64, end: u64, division: usize) !void {
     const ns = @intToFloat(f64, (end - start) / division);
     if (ns <= time.ns_per_ms) {
-        try std.fmt.format(writer, "{d:.3}ns", .{ns});
+        try std.fmt.format(writer, spec, .{ ns, "ns " });
         return;
     }
     if (ns <= time.ns_per_s) {
-        try std.fmt.format(writer, "{d:.3}ms", .{ns / @intToFloat(f64, time.ns_per_ms)});
+        try std.fmt.format(writer, spec, .{ ns / @intToFloat(f64, time.ns_per_ms), "ms " });
         return;
     }
     if (ns <= time.ns_per_min) {
-        try std.fmt.format(writer, "{d:.3}s", .{ns / @intToFloat(f64, time.ns_per_s)});
+        try std.fmt.format(writer, spec, .{ ns / @intToFloat(f64, time.ns_per_s), "s  " });
         return;
     }
-    try std.fmt.format(writer, "{d:.3}min", .{ns / @intToFloat(f64, time.ns_per_min)});
+    try std.fmt.format(writer, spec, .{ ns / @intToFloat(f64, time.ns_per_min), "min" });
     return;
 }
 
-fn xorBench(T: anytype, size: usize, trials: usize) !void {
+fn formatBytes(writer: anytype, comptime spec: []const u8, bytes: u64) !void {
+    const kib = 1024;
+    const mib = 1024 * kib;
+    const gib = 1024 * mib;
+    if (bytes < kib) {
+        try std.fmt.format(writer, spec, .{ bytes, "B  " });
+    }
+    if (bytes < mib) {
+        try std.fmt.format(writer, spec, .{ bytes / kib, "KiB" });
+        return;
+    }
+    if (bytes < gib) {
+        try std.fmt.format(writer, spec, .{ bytes / mib, "MiB" });
+        return;
+    }
+    try std.fmt.format(writer, spec, .{ bytes / gib, "GiB" });
+    return;
+}
+
+fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !void {
     const allocator = std.heap.page_allocator;
+
+    var filterMA = MeasuredAllocator.init(allocator);
+    var filterAllocator = &filterMA.allocator;
+
+    var buildMA = MeasuredAllocator.init(allocator);
+    var buildAllocator = &buildMA.allocator;
+
     const stdout = std.io.getStdOut().writer();
     var timer = try Timer.start();
 
     // Initialize filter.
-    var start = timer.lap();
-    const filter = try xorfilter.Xor(T).init(allocator, size);
+    const filter = try Filter.init(filterAllocator, size);
     defer filter.deinit();
-    var end = timer.read();
-    try stdout.print("init:\t", .{});
-    try formatTime(stdout, start, end, 1);
-    try stdout.print("\n", .{});
 
     // Generate keys.
-    timer.reset();
-    start = timer.lap();
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
-    for (keys) |key, i| {
+    for (keys) |_, i| {
         keys[i] = i;
     }
-    end = timer.read();
-    try stdout.print("generate keys:\t", .{});
-    try formatTime(stdout, start, end, 1);
-    try stdout.print("\n", .{});
 
     // Populate filter.
     timer.reset();
-    start = timer.lap();
-    try filter.populate(allocator, keys[0..]);
-    end = timer.read();
-    try stdout.print("populate:\t", .{});
-    try formatTime(stdout, start, end, 1);
-    try stdout.print("\n", .{});
+    const populateTimeStart = timer.lap();
+    try filter.populate(buildAllocator, keys[0..]);
+    const populateTimeEnd = timer.read();
 
     // Perform random matches.
     var random_matches: u64 = 0;
     var i: u64 = 0;
     var default_prng = std.rand.DefaultPrng.init(0);
     timer.reset();
-    start = timer.lap();
+    const randomMatchesTimeStart = timer.lap();
     while (i < trials) : (i += 1) {
         var random_key: u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
@@ -73,14 +86,28 @@ fn xorBench(T: anytype, size: usize, trials: usize) !void {
             }
         }
     }
-    end = timer.read();
-    try stdout.print("random matches:\t", .{});
-    try formatTime(stdout, start, end, trials);
-    try stdout.print(" per check\n", .{});
+    const randomMatchesTimeEnd = timer.read();
 
     const fpp = @intToFloat(f64, random_matches) * 1.0 / @intToFloat(f64, trials);
-    std.debug.print("fpp (estimated): {d:3.10}\n", .{fpp});
-    std.debug.print("bits per entry: {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
+
+    const bitsPerEntry = @intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size);
+    const filterBitsPerEntry = @intToFloat(f64, filterMA.state.peak_memory_usage_bytes) * 8.0 / @intToFloat(f64, size);
+    if (!std.math.approxEqAbs(f64, filterBitsPerEntry, bitsPerEntry, 0.001)) {
+        @panic("sizeInBytes reporting wrong numbers?");
+    }
+
+    try stdout.print("| {s: <10} ", .{algorithm});
+    try stdout.print("| {: <10} ", .{keys.len});
+    try stdout.print("| ", .{});
+    try formatTime(stdout, "{d: >7.1}{s}", populateTimeStart, populateTimeEnd, 1);
+    try stdout.print(" | ", .{});
+    try formatTime(stdout, "{d: >8.1}{s}", randomMatchesTimeStart, randomMatchesTimeEnd, trials);
+    try stdout.print(" | {d: >12} ", .{fpp});
+    try stdout.print("| {d: >14.2} ", .{bitsPerEntry});
+    try stdout.print("| ", .{});
+    try formatBytes(stdout, "{: >9} {s}", buildMA.state.peak_memory_usage_bytes);
+    try formatBytes(stdout, " | {: >8} {s}", filterMA.state.peak_memory_usage_bytes);
+    try stdout.print(" |\n", .{});
 }
 
 fn usage() void {
@@ -88,32 +115,19 @@ fn usage() void {
         \\benchmark [options]
         \\
         \\Options:
-        \\  --xor         int             benchmark xor filter with N fingerprint bit size
-        \\  --fuse        int             benchmark fuse filter with N fingerprint bit size
-        \\  --num-keys    [int=1000000]   number of keys to insert
         \\  --num-trials  [int=10000000]  number of trials / containment checks to perform
         \\  --help
         \\
     , .{});
 }
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
     var buffer: [1024]u8 = undefined;
     var fixed = std.heap.FixedBufferAllocator.init(buffer[0..]);
     const args = try std.process.argsAlloc(&fixed.allocator);
 
-    var num_keys: usize = 1000000;
-    var num_trials: usize = 10000000;
+    var num_trials: usize = 100_000_000;
     var i: usize = 1;
     while (i < args.len) : (i += 1) {
-        if (std.mem.eql(u8, args[i], "--num-keys")) {
-            i += 1;
-            if (i == args.len) {
-                usage();
-                std.os.exit(1);
-            }
-            num_keys = try std.fmt.parseUnsigned(usize, args[i], 10);
-        }
         if (std.mem.eql(u8, args[i], "--num-trials")) {
             i += 1;
             if (i == args.len) {
@@ -124,67 +138,41 @@ pub fn main() !void {
         }
     }
 
-    i = 1;
-    while (i < args.len) : (i += 1) {
-        if (std.mem.eql(u8, args[i], "--xor")) {
-            i += 1;
-            if (i == args.len) {
-                usage();
-                std.os.exit(1);
-            }
-            const bit_size = try std.fmt.parseUnsigned(usize, args[i], 10);
-            try stdout.print("benchmarking xor{}\n", .{bit_size});
-            return switch (bit_size) {
-                2 => return xorBench(u2, num_keys, num_trials),
-                4 => return xorBench(u4, num_keys, num_trials),
-                6 => return xorBench(u6, num_keys, num_trials),
-                8 => return xorBench(u8, num_keys, num_trials),
-                10 => return xorBench(u10, num_keys, num_trials),
-                12 => return xorBench(u12, num_keys, num_trials),
-                14 => return xorBench(u14, num_keys, num_trials),
-                16 => return xorBench(u16, num_keys, num_trials),
-                18 => return xorBench(u18, num_keys, num_trials),
-                20 => return xorBench(u20, num_keys, num_trials),
-                22 => return xorBench(u22, num_keys, num_trials),
-                24 => return xorBench(u24, num_keys, num_trials),
-                26 => return xorBench(u26, num_keys, num_trials),
-                28 => return xorBench(u28, num_keys, num_trials),
-                30 => return xorBench(u30, num_keys, num_trials),
-                32 => return xorBench(u32, num_keys, num_trials),
-                else => unreachable,
-            };
-        } else if (std.mem.eql(u8, args[i], "--fuse")) {
-            i += 1;
-            if (i == args.len) {
-                usage();
-                std.os.exit(1);
-            }
-            const bit_size = try std.fmt.parseUnsigned(usize, args[i], 10);
-            try stdout.print("benchmarking fuse{}\n", .{bit_size});
-            return switch (bit_size) {
-                2 => return xorBench(u2, num_keys, num_trials),
-                4 => return xorBench(u4, num_keys, num_trials),
-                6 => return xorBench(u6, num_keys, num_trials),
-                8 => return xorBench(u8, num_keys, num_trials),
-                10 => return xorBench(u10, num_keys, num_trials),
-                12 => return xorBench(u12, num_keys, num_trials),
-                14 => return xorBench(u14, num_keys, num_trials),
-                16 => return xorBench(u16, num_keys, num_trials),
-                18 => return xorBench(u18, num_keys, num_trials),
-                20 => return xorBench(u20, num_keys, num_trials),
-                22 => return xorBench(u22, num_keys, num_trials),
-                24 => return xorBench(u24, num_keys, num_trials),
-                26 => return xorBench(u26, num_keys, num_trials),
-                28 => return xorBench(u28, num_keys, num_trials),
-                30 => return xorBench(u30, num_keys, num_trials),
-                32 => return xorBench(u32, num_keys, num_trials),
-                else => unreachable,
-            };
-        } else {
-            usage();
-            std.os.exit(1);
-        }
-    }
-    usage();
-    std.os.exit(1);
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("| Algorithm  | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |\n", .{});
+    try stdout.print("|------------|------------|------------|-------------|--------------|----------------|---------------|--------------|\n", .{});
+    try bench("xor2", xorfilter.Xor(u2), 1_000_000, num_trials);
+    try bench("xor4", xorfilter.Xor(u4), 1_000_000, num_trials);
+    try bench("xor8", xorfilter.Xor(u8), 1_000_000, num_trials);
+    try bench("xor16", xorfilter.Xor(u16), 1_000_000, num_trials);
+    try bench("xor32", xorfilter.Xor(u32), 1_000_000, num_trials);
+    try bench("fuse8", xorfilter.Fuse(u8), 1_000_000, num_trials);
+    try bench("fuse16", xorfilter.Fuse(u16), 1_000_000, num_trials);
+    try bench("fuse32", xorfilter.Fuse(u32), 1_000_000, num_trials);
+    try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
+    try bench("xor2", xorfilter.Xor(u2), 10_000_000, num_trials / 10);
+    try bench("xor4", xorfilter.Xor(u4), 10_000_000, num_trials / 10);
+    try bench("xor8", xorfilter.Xor(u8), 10_000_000, num_trials / 10);
+    try bench("xor16", xorfilter.Xor(u16), 10_000_000, num_trials / 10);
+    try bench("xor32", xorfilter.Xor(u32), 10_000_000, num_trials / 10);
+    try bench("fuse8", xorfilter.Fuse(u8), 10_000_000, num_trials / 10);
+    try bench("fuse16", xorfilter.Fuse(u16), 10_000_000, num_trials / 10);
+    try bench("fuse32", xorfilter.Fuse(u32), 10_000_000, num_trials / 10);
+    try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
+    try bench("xor2", xorfilter.Xor(u2), 100_000_000, num_trials / 100);
+    try bench("xor4", xorfilter.Xor(u4), 100_000_000, num_trials / 100);
+    try bench("xor8", xorfilter.Xor(u8), 100_000_000, num_trials / 100);
+    try bench("xor16", xorfilter.Xor(u16), 100_000_000, num_trials / 100);
+    try bench("xor32", xorfilter.Xor(u32), 100_000_000, num_trials / 100);
+    try bench("fuse8", xorfilter.Fuse(u8), 100_000_000, num_trials / 100);
+    try bench("fuse16", xorfilter.Fuse(u16), 100_000_000, num_trials / 100);
+    try bench("fuse32", xorfilter.Fuse(u32), 100_000_000, num_trials / 100);
+    try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
+    try stdout.print("\n", .{});
+    try stdout.print("Legend:\n\n", .{});
+    try stdout.print("* contains(k): The time taken to check if a key is in the filter\n", .{});
+    try stdout.print("* false+ prob.: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.\n", .{});
+    try stdout.print("* bits per entry: The amount of memory in bits the filter uses to store a single entry.\n", .{});
+    try stdout.print("* peak populate: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)\n", .{});
+    try stdout.print("* filter total: Amount of memory consumed for filter itself in total (bits per entry * entries.)\n", .{});
 }

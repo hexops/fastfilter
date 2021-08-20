@@ -4,13 +4,16 @@
 
 This is a [Zig](https://ziglang.org) implementation of Xor Filters and Fuse Filters, which are faster and smaller than Bloom and Cuckoo filters and allow for quickly checking if a key is part of a set.
 
-- [Benefits of Zig implementation](#benefits-of-zig-implementation)
-- [Research papers](#research-papers)
-- [Usage](#usage)
-- [Serialization](#serialization)
-- [Note about extremely large datasets](#note-about-extremely-large-datasets)
-- [Special thanks](#special-thanks)
-- [Changelog](#changelog)
+- [xorfilter: Zig implementation of Xor Filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>](#xorfilter-zig-implementation-of-xor-filters-img)
+  - [Benefits of Zig implementation](#benefits-of-zig-implementation)
+  - [Research papers](#research-papers)
+  - [Usage](#usage)
+  - [Serialization](#serialization)
+  - [Should I use xor filters or fuse filters?](#should-i-use-xor-filters-or-fuse-filters)
+  - [Note about extremely large datasets](#note-about-extremely-large-datasets)
+  - [Benchmarks](#benchmarks)
+  - [Special thanks](#special-thanks)
+  - [Changelog](#changelog)
 
 ## Benefits of Zig implementation
 
@@ -203,4 +206,6 @@ If it was not for the above people, I ([@slimsag](https://github.com/slimsag)) w
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+- **v0.9.0** (not yet published):
+  - Added much improved benchmarking suite with more details on memory consumption during filter population, etc.
 - **v0.8.0**: initial release with support for Xor and Fuse filters of varying bit sizes, key iterators, serialization, and a slice de-duplication helper.
