@@ -170,9 +170,9 @@ pub fn main() !void {
     try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
     try stdout.print("\n", .{});
     try stdout.print("Legend:\n\n", .{});
-    try stdout.print("* contains(k): The time taken to check if a key is in the filter\n", .{});
-    try stdout.print("* false+ prob.: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.\n", .{});
-    try stdout.print("* bits per entry: The amount of memory in bits the filter uses to store a single entry.\n", .{});
-    try stdout.print("* peak populate: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)\n", .{});
-    try stdout.print("* filter total: Amount of memory consumed for filter itself in total (bits per entry * entries.)\n", .{});
+    try stdout.print("* **contains(k)**: The time taken to check if a key is in the filter\n", .{});
+    try stdout.print("* **false+ prob.**: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.\n", .{});
+    try stdout.print("* **bits per entry**: The amount of memory in bits the filter uses to store a single entry.\n", .{});
+    try stdout.print("* **peak populate**: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)\n", .{});
+    try stdout.print("* **filter total**: Amount of memory consumed for filter itself in total (bits per entry * entries.)\n", .{});
 }

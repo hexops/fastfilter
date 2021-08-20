@@ -161,11 +161,11 @@ zig run -O ReleaseFast src/benchmark.zig -- --xor 8 --num-keys 1000000
 
 Legend:
 
-* contains(k): The time taken to check if a key is in the filter
-* false+ prob.: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.
-* bits per entry: The amount of memory in bits the filter uses to store a single entry.
-* peak populate: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)
-* filter total: Amount of memory consumed for filter itself in total (bits per entry * entries.)
+* **contains(k)**: The time taken to check if a key is in the filter
+* **false+ prob.**: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.
+* **bits per entry**: The amount of memory in bits the filter uses to store a single entry.
+* **peak populate**: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)
+* **filter total**: Amount of memory consumed for filter itself in total (bits per entry * entries.)
 
 </details>
 
@@ -208,11 +208,11 @@ Legend:
 
 Legend:
 
-* contains(k): The time taken to check if a key is in the filter
-* false+ prob.: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.
-* bits per entry: The amount of memory in bits the filter uses to store a single entry.
-* peak populate: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)
-* filter total: Amount of memory consumed for filter itself in total (bits per entry * entries.)
+* **contains(k)**: The time taken to check if a key is in the filter
+* **false+ prob.**: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.
+* **bits per entry**: The amount of memory in bits the filter uses to store a single entry.
+* **peak populate**: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)
+* **filter total**: Amount of memory consumed for filter itself in total (bits per entry * entries.)
 
 </details>
 
