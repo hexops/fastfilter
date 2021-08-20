@@ -208,4 +208,5 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 
 - **v0.9.0** (not yet published):
   - Added much improved benchmarking suite with more details on memory consumption during filter population, etc.
+  - Properly exposed the `Fuse(T)` type, for arbitrary-bit-size fuse filters.
 - **v0.8.0**: initial release with support for Xor and Fuse filters of varying bit sizes, key iterators, serialization, and a slice de-duplication helper.

@@ -1,5 +1,6 @@
 const std = @import("std");
 
+pub const Fuse = @import("fusefilter.zig").Fuse;
 pub const Fuse8 = @import("fusefilter.zig").Fuse8;
 pub const Xor = @import("xorfilter.zig").Xor;
 pub const Xor8 = @import("xorfilter.zig").Xor8;
