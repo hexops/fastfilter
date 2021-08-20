@@ -96,7 +96,7 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
         @panic("sizeInBytes reporting wrong numbers?");
     }
 
-    try stdout.print("| {s: <10} ", .{algorithm});
+    try stdout.print("| {s: <12} ", .{algorithm});
     try stdout.print("| {: <10} ", .{keys.len});
     try stdout.print("| ", .{});
     try formatTime(stdout, "{d: >7.1}{s}", populateTimeStart, populateTimeEnd, 1);
@@ -139,8 +139,11 @@ pub fn main() !void {
     }
 
     const stdout = std.io.getStdOut().writer();
-    try stdout.print("| Algorithm  | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |\n", .{});
-    try stdout.print("|------------|------------|------------|-------------|--------------|----------------|---------------|--------------|\n", .{});
+    try stdout.print("| Algorithm    | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |\n", .{});
+    try stdout.print("|--------------|------------|------------|-------------|--------------|----------------|---------------|--------------|\n", .{});
+    try bench("binaryfuse8", xorfilter.BinaryFuse(u8), 1_000_000, num_trials);
+    try bench("binaryfuse16", xorfilter.BinaryFuse(u16), 1_000_000, num_trials);
+    try bench("binaryfuse32", xorfilter.BinaryFuse(u32), 1_000_000, num_trials);
     try bench("xor2", xorfilter.Xor(u2), 1_000_000, num_trials);
     try bench("xor4", xorfilter.Xor(u4), 1_000_000, num_trials);
     try bench("xor8", xorfilter.Xor(u8), 1_000_000, num_trials);
@@ -149,7 +152,10 @@ pub fn main() !void {
     try bench("fuse8", xorfilter.Fuse(u8), 1_000_000, num_trials);
     try bench("fuse16", xorfilter.Fuse(u16), 1_000_000, num_trials);
     try bench("fuse32", xorfilter.Fuse(u32), 1_000_000, num_trials);
-    try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
+    try stdout.print("|              |            |            |             |              |                |               |              |\n", .{});
+    try bench("binaryfuse8", xorfilter.BinaryFuse(u8), 10_000_000, num_trials / 10);
+    try bench("binaryfuse16", xorfilter.BinaryFuse(u16), 10_000_000, num_trials / 10);
+    try bench("binaryfuse32", xorfilter.BinaryFuse(u32), 10_000_000, num_trials / 10);
     try bench("xor2", xorfilter.Xor(u2), 10_000_000, num_trials / 10);
     try bench("xor4", xorfilter.Xor(u4), 10_000_000, num_trials / 10);
     try bench("xor8", xorfilter.Xor(u8), 10_000_000, num_trials / 10);
@@ -158,7 +164,10 @@ pub fn main() !void {
     try bench("fuse8", xorfilter.Fuse(u8), 10_000_000, num_trials / 10);
     try bench("fuse16", xorfilter.Fuse(u16), 10_000_000, num_trials / 10);
     try bench("fuse32", xorfilter.Fuse(u32), 10_000_000, num_trials / 10);
-    try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
+    try stdout.print("|              |            |            |             |              |                |               |              |\n", .{});
+    try bench("binaryfuse8", xorfilter.BinaryFuse(u8), 100_000_000, num_trials / 100);
+    try bench("binaryfuse16", xorfilter.BinaryFuse(u16), 100_000_000, num_trials / 100);
+    try bench("binaryfuse32", xorfilter.BinaryFuse(u32), 100_000_000, num_trials / 100);
     try bench("xor2", xorfilter.Xor(u2), 100_000_000, num_trials / 100);
     try bench("xor4", xorfilter.Xor(u4), 100_000_000, num_trials / 100);
     try bench("xor8", xorfilter.Xor(u8), 100_000_000, num_trials / 100);
@@ -167,7 +176,7 @@ pub fn main() !void {
     try bench("fuse8", xorfilter.Fuse(u8), 100_000_000, num_trials / 100);
     try bench("fuse16", xorfilter.Fuse(u16), 100_000_000, num_trials / 100);
     try bench("fuse32", xorfilter.Fuse(u32), 100_000_000, num_trials / 100);
-    try stdout.print("|            |            |            |             |              |                |               |              |\n", .{});
+    try stdout.print("|              |            |            |             |              |                |               |              |\n", .{});
     try stdout.print("\n", .{});
     try stdout.print("Legend:\n\n", .{});
     try stdout.print("* **contains(k)**: The time taken to check if a key is in the filter\n", .{});
