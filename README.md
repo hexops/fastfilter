@@ -123,7 +123,7 @@ zig run -O ReleaseFast src/benchmark.zig -- --xor 8 --num-keys 1000000
 ```
 
 <details>
-<summary><strong>Benchmarks:</strong> 2019 Macbook Pro (1M - 100M keys)</summary>
+<summary><strong>Benchmarks:</strong> 2019 Macbook Pro, Intel i9 (1M - 100M keys)</summary>
 
 * CPU: 2.3 GHz 8-Core Intel Core i9
 * Memory: 16 GB 2667 MHz DDR4
@@ -170,41 +170,49 @@ Legend:
 </details>
 
 <details>
-<summary><strong>Benchmarks:</strong> Windows 10 WSL2 Desktop (1M - 250M keys)</summary>
+<summary><strong>Benchmarks:</strong> Windows 10, AMD Ryzen 9 3900X (1M - 100M keys)</summary>
 
 * CPU: 3.79Ghz AMD Ryzen 9 3900X
 * Memory: 32 GB 2133 MHz DDR4
-* Zig version: ``0.8.0-dev.1039+bea791b63`
+* Zig version: `0.9.0-dev.450+aa2a31612`
 
-| Algorithm | # of keys | populate | time per containment check | fpp (estimated) | bits per entry (memory) |
-|-----------|-----------|----------|----------------------------|-----------------|-------------------------|
-| xor4      | 1M        | 112ms    | 23ns/check                 | 0.0625333000    | 9.8                     |
-| xor8      | 1M        | 112ms    | 23ns/check                 | 0.0039010000    | 9.8                     |
-| xor16     | 1M        | 117ms    | 24ns/check                 | 0.0000140000    | 19.7                    |
-| xor32     | 1M        | 119ms    | 25ns/check                 | 0.0000000000    | 39.4                    |
-| fuse8     | 1M        | 112ms    | 23ns/check                 | 0.0039010000    | 9.8                     |
-| fuse16    | 1M        | 115ms    | 24ns/check                 | 0.0000140000    | 19.7                    |
-|           |           |          |                            |                 |                         |
-| xor4      | 10M       | 1.6s     | 39ns/check                 | 0.0626137000    | 9.8                     |
-| xor8      | 10M       | 1.6s     | 38ns/check                 | 0.0039369000    | 9.8                     |
-| xor16     | 10M       | 1.7s     | 126ns/check                | 0.0000173000    | 19.7                    |
-| xor32     | 10M       | 1.8s     | 158ns/check                | 0.0000000000    | 39.4                    |
-| fuse8     | 10M       | 1.6s     | 38ns/check                 | 0.0039369000    | 9.8                     |
-| fuse16    | 10M       | 1.7s     | 127ns/check                | 0.0000173000    | 19.7                    |
-|           |           |          |                            |                 |                         |
-| xor4      | 100M      | 21s      | 175ns/check                | 0.0625772000    | 9.8                     |
-| xor8      | 100M      | 20s      | 175ns/check                | 0.0039238000    | 9.8                     |
-| xor16     | 100M      | 20s      | 180ns/check                | 0.0000147000    | 19.7                    |
-| xor32     | 100M      | 20s      | 190ns/check                | 0.0000000000    | 39.4                    |
-| fuse8     | 100M      | 20s      | 181ns/check                | 0.0039238000    | 9.8                     |
-| fuse16    | 100M      | 20s      | 183ns/check                | 0.0000147000    | 19.7                    |
-|           |           |          |                            |                 |                         |
-| xor4      | 250M      | 1.1min   | 194ns/check                | 0.0625503000    | 9.8                     |
-| xor8      | 250M      | 1.2min   | 190ns/check                | 0.0038876000    | 9.8                     |
-| xor16     | 250M      | 1.2min   | 196ns/check                | 0.0000125000    | 19.7                    |
-| xor32     | 250M      | 1.1min   | 203ns/check                | 0.0000000000    | 39.4                    |
-| fuse8     | 250M      | 1.1min   | 199ns/check                | 0.0038876000    | 9.8                     |
-| fuse16    | 250M      | 1.1min   | 203ns/check                | 0.0000125000    | 19.7                    |
+| Algorithm  | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |
+|------------|------------|------------|-------------|--------------|----------------|---------------|--------------|
+| xor2       | 1000000    |    74.5ms  |     25.0ns  |   0.25000163 |           9.84 |        52 MiB |        1 MiB |
+| xor4       | 1000000    |    84.4ms  |     25.0ns  |   0.06250427 |           9.84 |        52 MiB |        1 MiB |
+| xor8       | 1000000    |    73.8ms  |     25.0ns  |   0.00391662 |           9.84 |        52 MiB |        1 MiB |
+| xor16      | 1000000    |    75.9ms  |     25.0ns  |   0.00001536 |          19.68 |        52 MiB |        2 MiB |
+| xor32      | 1000000    |    76.1ms  |     25.0ns  |            0 |          39.36 |        52 MiB |        4 MiB |
+| fuse8      | 1000000    |    65.3ms  |     24.0ns  |   0.00390663 |           9.10 |        49 MiB |        1 MiB |
+| fuse16     | 1000000    |    68.3ms  |     25.0ns  |   0.00001516 |          18.20 |        49 MiB |        2 MiB |
+| fuse32     | 1000000    |    70.2ms  |     26.0ns  |            0 |          36.40 |        49 MiB |        4 MiB |
+|            |            |            |             |              |                |               |              |
+| xor2       | 10000000   |     1.1s   |     35.0ns  |     0.249876 |           9.84 |       527 MiB |       11 MiB |
+| xor4       | 10000000   |     1.1s   |     37.0ns  |    0.0625026 |           9.84 |       527 MiB |       11 MiB |
+| xor8       | 10000000   |     1.1s   |     35.0ns  |    0.0038881 |           9.84 |       527 MiB |       11 MiB |
+| xor16      | 10000000   |     1.3s   |    114.0ns  |    0.0000134 |          19.68 |       527 MiB |       23 MiB |
+| xor32      | 10000000   |     1.3s   |    144.0ns  |            0 |          39.36 |       527 MiB |       46 MiB |
+| fuse8      | 10000000   |     1.0s   |     34.0ns  |    0.0039089 |           9.10 |       499 MiB |       10 MiB |
+| fuse16     | 10000000   |     1.0s   |    106.0ns  |    0.0000172 |          18.20 |       499 MiB |       21 MiB |
+| fuse32     | 10000000   |     1.1s   |    142.0ns  |            0 |          36.40 |       499 MiB |       43 MiB |
+|            |            |            |             |              |                |               |              |
+| xor2       | 100000000  |    20.2s   |    166.0ns  |     0.249868 |           9.84 |         5 GiB |      117 MiB |
+| xor4       | 100000000  |    20.2s   |    167.0ns  |     0.062417 |           9.84 |         5 GiB |      117 MiB |
+| xor8       | 100000000  |    19.2s   |    166.0ns  |     0.003873 |           9.84 |         5 GiB |      117 MiB |
+| xor16      | 100000000  |    17.9s   |    169.0ns  |     0.000021 |          19.68 |         5 GiB |      234 MiB |
+| xor32      | 100000000  |    20.3s   |    181.0ns  |            0 |          39.36 |         5 GiB |      469 MiB |
+| fuse8      | 100000000  |    20.6s   |    166.0ns  |     0.003797 |           9.10 |         4 GiB |      108 MiB |
+| fuse16     | 100000000  |    21.6s   |    170.0ns  |     0.000015 |          18.20 |         4 GiB |      216 MiB |
+| fuse32     | 100000000  |    21.4s   |    174.0ns  |            0 |          36.40 |         4 GiB |      433 MiB |
+|            |            |            |             |              |                |               |              |
+
+Legend:
+
+* contains(k): The time taken to check if a key is in the filter
+* false+ prob.: False positive probability, the probability that a containment check will erroneously return true for a key that has not actually been added to the filter.
+* bits per entry: The amount of memory in bits the filter uses to store a single entry.
+* peak populate: Amount of memory consumed during filter population, excluding keys themselves (8 bytes * num_keys.)
+* filter total: Amount of memory consumed for filter itself in total (bits per entry * entries.)
 
 </details>
 
