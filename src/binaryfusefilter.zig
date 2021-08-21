@@ -56,8 +56,8 @@ pub fn BinaryFuse(comptime T: type) type {
             const segment_length_mask = segment_length - 1;
             const size_factor: f64 = calculateSizeFactor(arity, size);
             const capacity = @floatToInt(u32, math.round(@intToFloat(f64, size) * size_factor));
-            const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length - (arity - 1);
-            var slice_length = (init_segment_count + arity - 1) * segment_length;
+            const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length -% (arity - 1);
+            var slice_length = (init_segment_count +% arity - 1) * segment_length;
             var segment_count = (slice_length + segment_length - 1) / segment_length;
             if (segment_count <= arity - 1) {
                 segment_count = 1;
@@ -114,6 +114,9 @@ pub fn BinaryFuse(comptime T: type) type {
         ///
         /// `keys.len()` must return the `usize` length.
         pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) Error!void {
+            if (keys.len() == 0) {
+                return;
+            }
             var rng_counter: u64 = 0x726b2b9d438b9d4d;
             self.seed = util.rngSplitMix64(&rng_counter);
 
@@ -316,9 +319,11 @@ inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
     // These parameters are very sensitive. Replacing `floor` by `round` can substantially affect
     // the construction time.
     if (arity == 3) {
-        return @as(u32, 1) << @floatToInt(u5, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25));
+        const shift_count = @truncate(u32, @bitCast(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
+        return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     } else if (arity == 4) {
-        return @as(u32, 1) << @floatToInt(u5, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5));
+        const shift_count = @truncate(u32, @bitCast(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
+        return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     }
     return 65536;
 }
@@ -354,10 +359,14 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     try filter.populate(allocator, keys[0..]);
 
-    try testing.expect(filter.contain(1) == true);
-    try testing.expect(filter.contain(5) == true);
-    try testing.expect(filter.contain(9) == true);
-    try testing.expect(filter.contain(1234) == true);
+    if (size > 9) {
+        try testing.expect(filter.contain(1) == true);
+        try testing.expect(filter.contain(5) == true);
+        try testing.expect(filter.contain(9) == true);
+    }
+    if (size > 1234) {
+        try testing.expect(filter.contain(1234) == true);
+    }
     try testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
 
     for (keys) |key| {
@@ -381,14 +390,22 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     std.debug.print("bits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
 }
 
+test "binaryFuse8_zero" {
+    try binaryFuseTest(u8, 0, 59);
+}
+
+test "binaryFuse8_1" {
+    try binaryFuseTest(u8, 1, 59);
+}
+
 test "binaryFuse8" {
-    try binaryFuseTest(u8, 1000000, 1130552);
+    try binaryFuseTest(u8, 1_000_000, 1130552);
 }
 
 test "binaryFuse16" {
-    try binaryFuseTest(u16, 1000000, 2261048);
+    try binaryFuseTest(u16, 1_000_000, 2261048);
 }
 
 test "binaryFuse32" {
-    try binaryFuseTest(u32, 1000000, 4522040);
+    try binaryFuseTest(u32, 1_000_000, 4522040);
 }
