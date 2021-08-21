@@ -55,7 +55,7 @@ pub fn BinaryFuse(comptime T: type) type {
             }
             const segment_length_mask = segment_length - 1;
             const size_factor: f64 = calculateSizeFactor(arity, size);
-            const capacity = @floatToInt(u32, math.round(@intToFloat(f64, size) * size_factor));
+            const capacity = if (math.isInf(size_factor)) 0 else @floatToInt(u32, math.round(@intToFloat(f64, size) * size_factor));
             const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length -% (arity - 1);
             var slice_length = (init_segment_count +% arity - 1) * segment_length;
             var segment_count = (slice_length + segment_length - 1) / segment_length;
@@ -250,7 +250,7 @@ pub fn BinaryFuse(comptime T: type) type {
                 self.seed = util.rngSplitMix64(&rng_counter);
             }
 
-            var i: usize = size - 1;
+            var i: u32 = @truncate(u32, size - 1);
             while (i < size) : (i -%= 1) {
                 // the hash of the key we insert next
                 const hash: u64 = reverse_order[i];
@@ -296,9 +296,9 @@ pub fn BinaryFuse(comptime T: type) type {
             // that size_t may be incorrect for 32-bit platforms?
             const shift_count = (36 - 18 * index);
             if (shift_count >= 63) {
-                h ^= 0;
+                h ^= 0 & self.segment_length_mask;
             } else {
-                h ^= @truncate(u64, (hh >> @truncate(u6, shift_count)) & self.segment_length_mask);
+                h ^= (hh >> @truncate(u6, shift_count)) & self.segment_length_mask;
             }
             return @truncate(u32, h);
         }
@@ -306,7 +306,7 @@ pub fn BinaryFuse(comptime T: type) type {
 }
 
 inline fn mulhi(a: u64, b: u64) u64 {
-    return @truncate(u64, @intCast(u128, a) *% @intCast(u128, b) >> 64);
+    return @truncate(u64, (@intCast(u128, a) *% @intCast(u128, b)) >> 64);
 }
 
 const Hashes = struct {
@@ -330,13 +330,13 @@ inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
 
 inline fn relaxedFloatToInt(comptime DestType: type, float: anytype) DestType {
     if (math.isInf(float) or math.isNegativeInf(float) or math.isNan(float)) {
-        return 1 << @bitSizeOf(DestType)-1;
+        return 1 << @bitSizeOf(DestType) - 1;
     }
     return @floatToInt(DestType, float);
 }
 
 inline fn max(a: f64, b: f64) f64 {
-    return if (a < b) a else b;
+    return if (a < b) b else a;
 }
 
 inline fn calculateSizeFactor(arity: u32, size: usize) f64 {
@@ -366,14 +366,13 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     try filter.populate(allocator, keys[0..]);
 
+    if (size > 0) try testing.expect(filter.contain(0));
     if (size > 9) {
         try testing.expect(filter.contain(1) == true);
         try testing.expect(filter.contain(5) == true);
         try testing.expect(filter.contain(9) == true);
     }
-    if (size > 1234) {
-        try testing.expect(filter.contain(1234) == true);
-    }
+    if (size > 1234) try testing.expect(filter.contain(1234) == true);
     try testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
 
     for (keys) |key| {
@@ -411,6 +410,14 @@ test "binaryFuse8_10" {
 
 test "binaryFuse8" {
     try binaryFuseTest(u8, 1_000_000, 1130552);
+}
+
+test "binaryFuse8_2m" {
+    try binaryFuseTest(u8, 2_000_000, 2261048);
+}
+
+test "binaryFuse8_5m" {
+    try binaryFuseTest(u8, 5_000_000, 5636152);
 }
 
 test "binaryFuse16" {
