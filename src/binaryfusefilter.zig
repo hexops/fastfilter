@@ -319,13 +319,20 @@ inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
     // These parameters are very sensitive. Replacing `floor` by `round` can substantially affect
     // the construction time.
     if (arity == 3) {
-        const shift_count = @truncate(u32, @bitCast(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
+        const shift_count = @truncate(u32, relaxedFloatToInt(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     } else if (arity == 4) {
-        const shift_count = @truncate(u32, @bitCast(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
+        const shift_count = @truncate(u32, relaxedFloatToInt(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     }
     return 65536;
+}
+
+inline fn relaxedFloatToInt(comptime DestType: type, float: anytype) DestType {
+    if (math.isInf(float) or math.isNegativeInf(float) or math.isNan(float)) {
+        return 1 << @bitSizeOf(DestType)-1;
+    }
+    return @floatToInt(DestType, float);
 }
 
 inline fn max(a: f64, b: f64) f64 {
@@ -395,7 +402,11 @@ test "binaryFuse8_zero" {
 }
 
 test "binaryFuse8_1" {
-    try binaryFuseTest(u8, 1, 59);
+    try binaryFuseTest(u8, 1, 68);
+}
+
+test "binaryFuse8_10" {
+    try binaryFuseTest(u8, 10, 104);
 }
 
 test "binaryFuse8" {
