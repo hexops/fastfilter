@@ -54,8 +54,8 @@ pub fn BinaryFuse(comptime T: type) type {
                 segment_length = 262144;
             }
             const segment_length_mask = segment_length - 1;
-            const size_factor: f64 = calculateSizeFactor(arity, size);
-            const capacity = if (math.isInf(size_factor)) 0 else @floatToInt(u32, math.round(@intToFloat(f64, size) * size_factor));
+            const size_factor: f64 = if (size == 0) 4 else calculateSizeFactor(arity, size);
+            const capacity = if (size <= 1) 0 else @floatToInt(u32, math.round(@intToFloat(f64, size) * size_factor));
             const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length -% (arity - 1);
             var slice_length = (init_segment_count +% arity - 1) * segment_length;
             var segment_count = (slice_length + segment_length - 1) / segment_length;
@@ -366,7 +366,12 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     try filter.populate(allocator, keys[0..]);
 
+    if (size == 0) {
+        try testing.expect(!filter.contain(0));
+        try testing.expect(!filter.contain(1));
+    }
     if (size > 0) try testing.expect(filter.contain(0));
+    if (size > 1) try testing.expect(filter.contain(1));
     if (size > 9) {
         try testing.expect(filter.contain(1) == true);
         try testing.expect(filter.contain(5) == true);
@@ -394,6 +399,14 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     std.debug.print("fpp {d:3.10} (estimated) \n", .{@intToFloat(f64, random_matches) * 1.0 / trials});
     std.debug.print("bits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
+}
+
+test "binaryFuse8_small_input_edge_cases" {
+    // See https://github.com/FastFilter/xor_singleheader/issues/26
+    try binaryFuseTest(u8, 0, 59);
+    try binaryFuseTest(u8, 1, 68);
+    try binaryFuseTest(u8, 2, 68);
+    try binaryFuseTest(u8, 3, 80);
 }
 
 test "binaryFuse8_zero" {
