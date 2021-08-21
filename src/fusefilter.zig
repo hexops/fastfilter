@@ -13,6 +13,9 @@ const FUSE_SLOTS = FUSE_SEGMENT_COUNT + FUSE_ARITY - 1;
 /// See `Fuse` for more details.
 pub const Fuse8 = Fuse(u8);
 
+/// DEPRECATED: Consider using binary fuse filters instead, they are less prone to creation failure
+/// (i.e. the algorithm works with small sets) and are generally all around better.
+///
 /// Dietzfelbinger & Walzer's fuse filters, described in "Dense Peelable Random Uniform Hypergraphs",
 /// https://arxiv.org/abs/1907.04749, can accomodate fill factors up to 87.9% full, rather than
 /// 1 / 1.23 = 81.3%. In the 8-bit case, this reduces the memory usage from 9.84 bits per entry to
