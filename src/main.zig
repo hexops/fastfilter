@@ -1,7 +1,5 @@
 const std = @import("std");
 
-pub const Fuse = @import("fusefilter.zig").Fuse;
-pub const Fuse8 = @import("fusefilter.zig").Fuse8;
 pub const BinaryFuse = @import("binaryfusefilter.zig").BinaryFuse;
 pub const BinaryFuse8 = @import("binaryfusefilter.zig").BinaryFuse8;
 pub const Xor = @import("xorfilter.zig").Xor;
@@ -13,9 +11,6 @@ pub const Error = @import("util.zig").Error;
 
 test "exports" {
     const allocator = std.heap.page_allocator;
-
-    const fuse8Filter = try Fuse8.init(allocator, 1);
-    defer fuse8Filter.deinit();
 
     const binaryFuse8Filter = try BinaryFuse8.init(allocator, 100);
     defer binaryFuse8Filter.deinit();
