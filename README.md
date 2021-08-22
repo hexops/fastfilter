@@ -1,6 +1,6 @@
-# xorfilter: Binary fuse & xor filters for Zig <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+# fastfilter: Binary fuse & xor filters for Zig <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
-[![CI](https://github.com/hexops/xorfilter/workflows/CI/badge.svg)](https://github.com/hexops/xorfilter/actions)
+[![CI](https://github.com/hexops/fastfilter/workflows/CI/badge.svg)](https://github.com/hexops/fastfilter/actions)
 
 <a href="https://raw.githubusercontent.com/FastFilter/xor_singleheader/master/figures/comparison.png"><img align="right" src="https://raw.githubusercontent.com/FastFilter/xor_singleheader/master/figures/comparison.png" alt="comparison" width="400px"></img></a>
 
@@ -120,6 +120,7 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
 - **v0.9.0** (not yet published):
+  - Renamed repository github.com/hexops/xorfilter -> github.com/hexops/fastfilter to account for binary fuse filters.
   - Implemented bleeding-edge (paper not yet published) "Binary Fuse Filters: Fast and Smaller Than Xor Filters" algorithm by Thomas Mueller Graf, Daniel Lemire
   - `BinaryFuse` filters are now recommended by default, are generally better than Xor and Fuse filters.
   - Deprecated traditional `Fuse` filters (`BinaryFuse` are much better.)
