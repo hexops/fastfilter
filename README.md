@@ -1,54 +1,35 @@
-# xorfilter: Zig implementation of Xor Filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+# xorfilter: Zig implementation of xor filters and binary fuse filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
 [![CI](https://github.com/hexops/xorfilter/workflows/CI/badge.svg)](https://github.com/hexops/xorfilter/actions)
 
-This is a [Zig](https://ziglang.org) implementation of Xor Filters and Fuse Filters, which are faster and smaller than Bloom and Cuckoo filters and allow for quickly checking if a key is part of a set.
+Xor filters and binary fuse filters are probabilistic data structures which allow for quickly checking whether an element is part of a set.
 
-- [xorfilter: Zig implementation of Xor Filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>](#xorfilter-zig-implementation-of-xor-filters-img)
-  - [Benefits of Zig implementation](#benefits-of-zig-implementation)
-  - [Research papers](#research-papers)
-  - [Usage](#usage)
-  - [Serialization](#serialization)
-  - [Should I use xor filters or fuse filters?](#should-i-use-xor-filters-or-fuse-filters)
-  - [Note about extremely large datasets](#note-about-extremely-large-datasets)
-  - [Benchmarks](#benchmarks)
-  - [Special thanks](#special-thanks)
-  - [Changelog](#changelog)
+Both are faster and more concise than Bloom filters, and smaller than Cuckoo filters. Binary fuse filters are a bleeding-edge development and are competitive with Facebook's ribbon filters:
+
+* Thomas Mueller Graf, Daniel Lemire, Binary Fuse Filters: Fast and Smaller Than Xor Filters (not yet published)
+* Thomas Mueller Graf, Daniel Lemire, [Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters](https://arxiv.org/abs/1912.08258), Journal of Experimental Algorithmics 25 (1), 2020. DOI: 10.1145/3376122
+
+![comparison](https://raw.githubusercontent.com/FastFilter/xor_singleheader/master/figures/comparison.png)
 
 ## Benefits of Zig implementation
 
-The two primary algorithms of interest here are:
+This is a [Zig](https://ziglang.org) implementation, which provides many practical benefits:
 
-* `Xor8` (recommended, has no more than a 0.3% false-positive probability)
-* `Fuse8` (better than xor+ variants when you have > 100 million keys)
+1. **Iterator-based:** you can populate xor or binary fuse filters using an iterator, without keeping your entire key set in-memory and without it being a contiguous array of keys. This can reduce memory usage when populating filters substantially.
+2. **Distinct allocators:** you can provide separate Zig `std.mem.Allocator` implementations for the filter itself and population, enabling interesting opportunities like mmap-backed population of filters with low physical memory usage.
+3. **Generic implementation:** use `Xor(u8)`, `Xor(u16)`, `BinaryFuse(u8)`, `BinaryFuse(u16)`, or experiment with more exotic variants like `Xor(u4)` thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and generic type system.
 
-Thanks to Zig's [bit-width integers](https://ziglang.org/documentation/master/#Runtime-Integer-Values) and type system, many more bit variants - any that is log2 - is supported as well via e.g. `Xor(u4)` or `Fuse(u4)`:
-
-* xor4, xor16, xor32, xor64, etc.
-* fuse4, fuse16, etc.
-
-Note, however, that Zig represents e.g. `u4` as a full byte. The more exotic bit-widths `u4`, `u20`, etc. are primarily interesting for [more compact serialization](#serialization).
-
-## Research papers
-
-Blog post: [Xor Filters: Faster and Smaller Than Bloom Filters](https://lemire.me/blog/2019/12/19/xor-filters-faster-and-smaller-than-bloom-filters).
-
-Xor Filters ([arxiv paper](https://arxiv.org/abs/1912.08258)):
-
-> Thomas Mueller Graf, Daniel Lemire, Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters, Journal of Experimental Algorithmics 25 (1), 2020. DOI: 10.1145/3376122 
-
-Fuse Filters ([arxiv paper](https://arxiv.org/abs/1907.04749)), as described [by @jbapple](https://github.com/FastFilter/xor_singleheader/pull/11#issue-356508475):
-
-> For large enough sets of keys, Dietzfelbinger & Walzer's fuse filters,
-described in "Dense Peelable Random Uniform Hypergraphs", can accomodate fill factors up to 87.9% full, rather than 1 / 1.23 = 81.3%.
+Zig's safety-checking and checked overflows has also enabled us to improve the upstream C/Go implementations where overflow and undefined behavior went unnoticed.[[1]](https://github.com/FastFilter/xor_singleheader/issues/26)
 
 ## Usage
 
-1. Decide if you want to use `Xor8` or `Fuse8` (you probably want `Xor8`): ["Should I use xor filters or fuse filters?"](#should-i-use-xor-filters-or-fuse-filters).
-2. Convert your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. "It is not important to have a good hash function, but collisions should be unlikely (~1/2^64)."
-3. Your keys must be unique, or else filter construction will fail. If you don't have unique keys, you can use the `xorfilter.AutoUnique(u64)(keys)` helper to deduplicate in typically O(N) time complexity, see the tests in `src/unique.zig` for more info.
+Decide if xor or binary fuse filters fit your use case better: [should I use binary fuse filters or xor filters?](#should-i-use-binary-fuse-filters-or-xor-filters)
 
-Here is an example:
+Get your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. ("It is not important to have a good hash function, but collisions should be unlikely (~1/2^64).")
+
+Keys must be unique, or else filter population will fail. If you don't have unique keys, you can use the `xorfilter.AutoUnique(u64)(keys)` helper to deduplicate (in typically O(N) time complexity), see the tests in `src/unique.zig` for usage examples.
+
+Here is a complete example:
 
 ```zig
 const xorfilter = @import("../xorfilter/src/main.zig")
@@ -56,9 +37,9 @@ const xorfilter = @import("../xorfilter/src/main.zig")
 test "mytest" {
     const allocator = std.heap.page_allocator;
 
-    // Initialize the xor filter with room for 10000 keys.
-    const size = 10000; // room for 10000 keys
-    const filter = try xorfilter.Xor8.init(allocator, size);
+    // Initialize the binary fuse filter with room for 1 million keys.
+    const size = 1_000_000;
+    const filter = try xorfilter.BinaryFuse8.init(allocator, size);
     defer filter.deinit();
 
     // Generate some consecutive keys.
@@ -71,10 +52,11 @@ test "mytest" {
     // If your keys are not unique, make them so:
     keys = xorfilter.Unique(u64)(keys);
 
-    // If this fails, your keys are not unique or allocation failed.
+    // Populate the filter with our keys. You can't update a xor / binary fuse filter after the
+    // fact, instead you should build a new one.
     try filter.populate(allocator, keys[0..]);
 
-    // Now we can quickly test for containment!
+    // Now we can quickly test for containment. So fast!
     testing.expect(filter.contain(1) == true);
 }
 ```
@@ -83,7 +65,26 @@ test "mytest" {
 
 ## Serialization
 
-To serialize the filters, you only need to encode the three struct fields:
+To serialize the filters, you only need to encode these struct fields:
+
+```zig
+pub fn BinaryFuse(comptime T: type) type {
+    return struct {
+        ...
+        seed: u64,
+        segment_length: u32,
+        segment_length_mask: u32,
+        segment_count: u32,
+        segment_count_length: u32,
+        fingerprints: []T,
+        ...
+```
+
+`T` will be the chosen fingerprint size, e.g. `u8` for `BinaryFuse8` or `Xor8`.
+
+Look at [`std.io.Writer`](https://sourcegraph.com/github.com/ziglang/zig/-/blob/lib/std/io/writer.zig) and [`std.io.BitWriter`](https://sourcegraph.com/github.com/ziglang/zig/-/blob/lib/std/io/bit_writer.zig) for ideas on actual serialization.
+
+Similarly, for xor filters you only need these struct fields:
 
 ```zig
 pub fn Xor(comptime T: type) type {
@@ -91,32 +92,43 @@ pub fn Xor(comptime T: type) type {
         seed: u64,
         blockLength: u64,
         fingerprints: []T,
-...
+        ...
 ```
 
-`T` will be the chosen fingerprint size, e.g. `u8` for `Xor8`.
+## Should I use binary fuse filters or xor filters?
 
-Look at [`std.io.Writer`](https://sourcegraph.com/github.com/ziglang/zig/-/blob/lib/std/io/writer.zig) and [`std.io.BitWriter`](https://sourcegraph.com/github.com/ziglang/zig/-/blob/lib/std/io/bit_writer.zig) for ideas on actual serialization.
+If you're not sure, start with `BinaryFuse8` filters. They're fast, and have a false-positive probability rate of 1/256 (or 0.4%).
 
-(The same is true of the fuse filter, replacing `blockLength` with `segmentLength`.)
+There are many tradeoffs, primarily between:
 
-## Should I use xor filters or fuse filters?
+* Memory usage
+* Containment check time
+* Population / creation time & memory usage
 
-Xor8 is the recommended default, and has no more than a 0.3% false-positive probability. If you have > 100 million keys, fuse8 may be better.
+See the [benchmarks](#benchmarks) section for a comparison of the tradeoffs between binary fuse filters and xor filters, as well as how larger bit sizes (e.g. `BinaryFuse(u16)`) consume more memory in exchange for a lower false-positive probability rate.
 
-My _non-expert_ understanding is that fuse filters are more compressed and optimal than **xor+** filters with extremely large sets of keys based on[[1]](https://github.com/FastFilter/xor_singleheader/pull/11)[[2]](https://github.com/FastFilter/fastfilter_java/issues/21)[[3]](https://github.com/FastFilter/xorfilter/issues/5#issuecomment-569121442). You should use them in place of xor+, and refer to the xor filter paper for whether or not you are at a scale that requires xor+/fuse filters.
-
-**Note that the fuse filter algorithm does require a large number of unique keys in order for population to succeed**, see [FastFilter/xor_singleheader#21](https://github.com/FastFilter/xor_singleheader/issues/21) - if you have few (<~125k consecutive) keys creation will fail.
+Note that _fuse filters_ are not to be confused with _binary fuse filters_, the former have issues with construction, often failing unless you have a large number of unique keys. Binary fuse filters do not suffer from this and are generally better than traditional ones in several ways. For this reason, we consider traditional fuse filters deprecated.
 
 ## Note about extremely large datasets
 
-This implementation supports key iterators, so you do not need to have all of your keys in-memory, see `Xor8.populateIter` and `Fuse8.populateIter`.
+This implementation supports key iterators, so you do not need to have all of your keys in-memory, see `BinaryFuse8.populateIter` and `Xor8.populateIter`.
 
-If you intend to use a xor filter with datasets of 100m+ keys, there is a possible faster implementation _for construction_ found in the C implementation [`xor8_buffered_populate`](https://github.com/FastFilter/xor_singleheader) which is not _yet_ implemented here.
+If you intend to use a xor filter with datasets of 100m+ keys, there is a possible faster implementation _for construction_ found in the C implementation [`xor8_buffered_populate`](https://github.com/FastFilter/xor_singleheader) which is not implemented here.
+
+## Changelog
+
+The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
+
+- **v0.9.0** (not yet published):
+  - Added much improved benchmarking suite with more details on memory consumption during filter population, etc.
+  - Properly exposed the `Fuse(T)` type, for arbitrary-bit-size fuse filters.
+  - Implemented "Binary Fuse Filters: Fast and Smaller Than Xor Filters" (bleeding edge, paper not yet published)
+  - Deprecated `Fuse` filters in favor of `BinaryFuse` filters, which are generally all-around better.
+- **v0.8.0**: initial release with support for Xor and Fuse filters of varying bit sizes, key iterators, serialization, and a slice de-duplication helper.
 
 ## Benchmarks
 
-Benchmarks were ran on both a 2019 Macbook Pro and Windows 10 (WSL2) desktop machine using e.g.:
+Benchmarks were ran on both a 2019 Macbook Pro and Windows 10 desktop machine using e.g.:
 
 ```
 zig run -O ReleaseFast src/benchmark.zig -- --xor 8 --num-keys 1000000
@@ -234,6 +246,11 @@ Legend:
 
 </details>
 
+## Related readings
+
+* Blog post by Daniel Lemire: [Xor Filters: Faster and Smaller Than Bloom Filters](https://lemire.me/blog/2019/12/19/xor-filters-faster-and-smaller-than-bloom-filters)
+* Fuse Filters ([arxiv paper](https://arxiv.org/abs/1907.04749)), as described [by @jbapple](https://github.com/FastFilter/xor_singleheader/pull/11#issue-356508475) (note these are not to be confused with _binary fuse filters_.)
+
 ## Special thanks
 
 * [**Thomas Mueller Graf**](https://github.com/thomasmueller) and [**Daniel Lemire**](https://github.com/lemire) - _for their excellent research into xor filters, xor+ filters, their C implementation, and more._
@@ -242,12 +259,3 @@ Legend:
 * [**Andrew Gutekanst**](https://github.com/Andoryuuta) - _for providing substantial help in debugging several issues in the Zig implementation._
 
 If it was not for the above people, I ([@slimsag](https://github.com/slimsag)) would not have been able to write this implementation and learn from the excellent [C implementation](https://github.com/FastFilter/xor_singleheader). Please credit the above people if you use this library.
-
-## Changelog
-
-The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
-
-- **v0.9.0** (not yet published):
-  - Added much improved benchmarking suite with more details on memory consumption during filter population, etc.
-  - Properly exposed the `Fuse(T)` type, for arbitrary-bit-size fuse filters.
-- **v0.8.0**: initial release with support for Xor and Fuse filters of varying bit sizes, key iterators, serialization, and a slice de-duplication helper.
