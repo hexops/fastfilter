@@ -120,10 +120,10 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
 - **v0.9.0** (not yet published):
+  - Implemented bleeding-edge (paper not yet published) "Binary Fuse Filters: Fast and Smaller Than Xor Filters" algorithm by Thomas Mueller Graf, Daniel Lemire
+  - `BinaryFuse` filters are now recommended by default, are generally better than Xor and Fuse filters.
+  - Deprecated traditional `Fuse` filters (`BinaryFuse` are much better.)
   - Added much improved benchmarking suite with more details on memory consumption during filter population, etc.
-  - Properly exposed the `Fuse(T)` type, for arbitrary-bit-size fuse filters.
-  - Implemented "Binary Fuse Filters: Fast and Smaller Than Xor Filters" (bleeding edge, paper not yet published)
-  - Deprecated `Fuse` filters in favor of `BinaryFuse` filters, which are generally all-around better.
 - **v0.8.0**: initial release with support for Xor and Fuse filters of varying bit sizes, key iterators, serialization, and a slice de-duplication helper.
 
 ## Benchmarks
