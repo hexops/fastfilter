@@ -1,15 +1,15 @@
-# xorfilter: Zig implementation of xor filters and binary fuse filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
+# xorfilter: Zig implementation of binary fuse & xor filters <a href="https://hexops.com"><img align="right" alt="Hexops logo" src="https://raw.githubusercontent.com/hexops/media/main/readme.svg"></img></a>
 
 [![CI](https://github.com/hexops/xorfilter/workflows/CI/badge.svg)](https://github.com/hexops/xorfilter/actions)
 
-Xor filters and binary fuse filters are probabilistic data structures which allow for quickly checking whether an element is part of a set.
+<a href="https://raw.githubusercontent.com/FastFilter/xor_singleheader/master/figures/comparison.png"><img align="right" src="https://raw.githubusercontent.com/FastFilter/xor_singleheader/master/figures/comparison.png" alt="comparison" width="400px"></img></a>
+
+Binary fuse filters & xor filters are probabilistic data structures which allow for quickly checking whether an element is part of a set.
 
 Both are faster and more concise than Bloom filters, and smaller than Cuckoo filters. Binary fuse filters are a bleeding-edge development and are competitive with Facebook's ribbon filters:
 
-* Thomas Mueller Graf, Daniel Lemire, Binary Fuse Filters: Fast and Smaller Than Xor Filters (not yet published)
+* Thomas Mueller Graf, Daniel Lemire, Binary Fuse Filters: Fast and Smaller Than Xor Filters (_not yet published_)
 * Thomas Mueller Graf, Daniel Lemire, [Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters](https://arxiv.org/abs/1912.08258), Journal of Experimental Algorithmics 25 (1), 2020. DOI: 10.1145/3376122
-
-![comparison](https://raw.githubusercontent.com/FastFilter/xor_singleheader/master/figures/comparison.png)
 
 ## Benefits of Zig implementation
 
