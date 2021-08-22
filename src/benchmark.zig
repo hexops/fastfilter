@@ -149,9 +149,6 @@ pub fn main() !void {
     try bench("xor8", xorfilter.Xor(u8), 1_000_000, num_trials);
     try bench("xor16", xorfilter.Xor(u16), 1_000_000, num_trials);
     try bench("xor32", xorfilter.Xor(u32), 1_000_000, num_trials);
-    try bench("fuse8", xorfilter.Fuse(u8), 1_000_000, num_trials);
-    try bench("fuse16", xorfilter.Fuse(u16), 1_000_000, num_trials);
-    try bench("fuse32", xorfilter.Fuse(u32), 1_000_000, num_trials);
     try stdout.print("|              |            |            |             |              |                |               |              |\n", .{});
     try bench("binaryfuse8", xorfilter.BinaryFuse(u8), 10_000_000, num_trials / 10);
     try bench("binaryfuse16", xorfilter.BinaryFuse(u16), 10_000_000, num_trials / 10);
@@ -161,9 +158,6 @@ pub fn main() !void {
     try bench("xor8", xorfilter.Xor(u8), 10_000_000, num_trials / 10);
     try bench("xor16", xorfilter.Xor(u16), 10_000_000, num_trials / 10);
     try bench("xor32", xorfilter.Xor(u32), 10_000_000, num_trials / 10);
-    try bench("fuse8", xorfilter.Fuse(u8), 10_000_000, num_trials / 10);
-    try bench("fuse16", xorfilter.Fuse(u16), 10_000_000, num_trials / 10);
-    try bench("fuse32", xorfilter.Fuse(u32), 10_000_000, num_trials / 10);
     try stdout.print("|              |            |            |             |              |                |               |              |\n", .{});
     try bench("binaryfuse8", xorfilter.BinaryFuse(u8), 100_000_000, num_trials / 100);
     try bench("binaryfuse16", xorfilter.BinaryFuse(u16), 100_000_000, num_trials / 100);
@@ -173,9 +167,6 @@ pub fn main() !void {
     try bench("xor8", xorfilter.Xor(u8), 100_000_000, num_trials / 100);
     try bench("xor16", xorfilter.Xor(u16), 100_000_000, num_trials / 100);
     try bench("xor32", xorfilter.Xor(u32), 100_000_000, num_trials / 100);
-    try bench("fuse8", xorfilter.Fuse(u8), 100_000_000, num_trials / 100);
-    try bench("fuse16", xorfilter.Fuse(u16), 100_000_000, num_trials / 100);
-    try bench("fuse32", xorfilter.Fuse(u32), 100_000_000, num_trials / 100);
     try stdout.print("|              |            |            |             |              |                |               |              |\n", .{});
     try stdout.print("\n", .{});
     try stdout.print("Legend:\n\n", .{});
