@@ -31,7 +31,7 @@ pub fn Fuse(comptime T: type) type {
         segmentLength: u64, // == slotCount / FUSE_SLOTS
         fingerprints: []T, // has room for 3*segmentLength values
 
-        /// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+        /// probability of success should always be > 0.5 so 100 iterations is highly unlikely
         maxIterations: usize = 100,
 
         const Self = @This();

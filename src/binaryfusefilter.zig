@@ -38,7 +38,7 @@ pub fn BinaryFuse(comptime T: type) type {
         segment_count_length: u32,
         fingerprints: []T,
 
-        /// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+        /// probability of success should always be > 0.5 so 100 iterations is highly unlikely
         max_iterations: usize = 100,
 
         const Self = @This();
