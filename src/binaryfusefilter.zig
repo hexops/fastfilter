@@ -404,40 +404,40 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
 test "binaryFuse8_small_input_edge_cases" {
     // See https://github.com/FastFilter/xor_singleheader/issues/26
-    try binaryFuseTest(u8, 0, 59);
-    try binaryFuseTest(u8, 1, 68);
-    try binaryFuseTest(u8, 2, 68);
-    try binaryFuseTest(u8, 3, 80);
+    try binaryFuseTest(u8, 0, 67);
+    try binaryFuseTest(u8, 1, 76);
+    try binaryFuseTest(u8, 2, 76);
+    try binaryFuseTest(u8, 3, 88);
 }
 
 test "binaryFuse8_zero" {
-    try binaryFuseTest(u8, 0, 59);
+    try binaryFuseTest(u8, 0, 67);
 }
 
 test "binaryFuse8_1" {
-    try binaryFuseTest(u8, 1, 68);
+    try binaryFuseTest(u8, 1, 76);
 }
 
 test "binaryFuse8_10" {
-    try binaryFuseTest(u8, 10, 104);
+    try binaryFuseTest(u8, 10, 112);
 }
 
 test "binaryFuse8" {
-    try binaryFuseTest(u8, 1_000_000, 1130552);
+    try binaryFuseTest(u8, 1_000_000, 1130560);
 }
 
 test "binaryFuse8_2m" {
-    try binaryFuseTest(u8, 2_000_000, 2261048);
+    try binaryFuseTest(u8, 2_000_000, 2261056);
 }
 
 test "binaryFuse8_5m" {
-    try binaryFuseTest(u8, 5_000_000, 5636152);
+    try binaryFuseTest(u8, 5_000_000, 5636160);
 }
 
 test "binaryFuse16" {
-    try binaryFuseTest(u16, 1_000_000, 2261048);
+    try binaryFuseTest(u16, 1_000_000, 2261056);
 }
 
 test "binaryFuse32" {
-    try binaryFuseTest(u32, 1_000_000, 4522040);
+    try binaryFuseTest(u32, 1_000_000, 4522048);
 }

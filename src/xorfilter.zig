@@ -384,15 +384,15 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "xor8" {
-    try xorTest(u8, 10000, 12378);
+    try xorTest(u8, 10000, 12386);
 }
 
 test "xor16" {
-    try xorTest(u16, 10000, 24708);
+    try xorTest(u16, 10000, 24716);
 }
 
 test "xor20" {
-    try xorTest(u20, 10000, 49368);
+    try xorTest(u20, 10000, 49376);
 }
 
 test "xor32" {
@@ -402,7 +402,7 @@ test "xor32" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u32, 1000000, 4920168);
+    try xorTest(u32, 1000000, 4920176);
 }
 
 test "xor64" {
@@ -412,5 +412,5 @@ test "xor64" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u64, 1000000, 9840288);
+    try xorTest(u64, 1000000, 9840296);
 }
