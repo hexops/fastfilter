@@ -30,7 +30,7 @@ pub const BinaryFuse8 = BinaryFuse(u8);
 /// strings or other types, you first need to hash them to a 64-bit integer.
 pub fn BinaryFuse(comptime T: type) type {
     return struct {
-        allocator: *Allocator,
+        allocator: Allocator,
         seed: u64,
         segment_length: u32,
         segment_length_mask: u32,
@@ -47,7 +47,7 @@ pub fn BinaryFuse(comptime T: type) type {
         /// elements.
         ///
         /// `deinit()` must be called by the caller to free the memory.
-        pub fn init(allocator: *Allocator, size: usize) !*Self {
+        pub fn init(allocator: Allocator, size: usize) !*Self {
             const arity: u32 = 3;
             var segment_length = calculateSegmentLength(arity, size);
             if (segment_length > 262144) {
@@ -99,7 +99,7 @@ pub fn BinaryFuse(comptime T: type) type {
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
         /// function call.
-        pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) Error!void {
+        pub fn populate(self: *Self, allocator: Allocator, keys: []u64) Error!void {
             const iter = try util.sliceIterator(u64).init(allocator, keys);
             defer iter.deinit();
             return self.populateIter(allocator, iter);
@@ -113,7 +113,7 @@ pub fn BinaryFuse(comptime T: type) type {
         /// call leads to the first element again.
         ///
         /// `keys.len()` must return the `usize` length.
-        pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) Error!void {
+        pub fn populateIter(self: *Self, allocator: Allocator, keys: anytype) Error!void {
             if (keys.len() == 0) {
                 return;
             }
@@ -387,9 +387,10 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     var random_matches: u64 = 0;
     const trials = 10000000;
     var i: u64 = 0;
-    var default_prng = std.rand.DefaultPrng.init(0);
+    var rng = std.rand.DefaultPrng.init(0);
+    const random = rng.random();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
+        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;

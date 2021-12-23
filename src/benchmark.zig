@@ -75,11 +75,12 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     // Perform random matches.
     var random_matches: u64 = 0;
     var i: u64 = 0;
-    var default_prng = std.rand.DefaultPrng.init(0);
+    var rng = std.rand.DefaultPrng.init(0);
+    const random = rng.random();
     timer.reset();
     const randomMatchesTimeStart = timer.lap();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
+        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;

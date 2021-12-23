@@ -36,13 +36,13 @@ pub inline fn fingerprint(hash: u64) u64 {
 
 pub fn sliceIterator(comptime T: type) type {
     return struct {
-        allocator: *Allocator,
+        allocator: Allocator,
         slice: []T,
         i: usize,
 
         const Self = @This();
 
-        pub inline fn init(allocator: *Allocator, slice: []T) !*Self {
+        pub inline fn init(allocator: Allocator, slice: []T) !*Self {
             const self = try allocator.create(Self);
             self.* = Self{
                 .allocator = allocator,

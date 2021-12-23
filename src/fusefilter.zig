@@ -26,7 +26,7 @@ pub const Fuse8 = Fuse(u8);
 /// strings or other types, you first need to hash them to a 64-bit integer.
 pub fn Fuse(comptime T: type) type {
     return struct {
-        allocator: *Allocator,
+        allocator: Allocator,
         seed: u64,
         segmentLength: u64, // == slotCount / FUSE_SLOTS
         fingerprints: []T, // has room for 3*segmentLength values
@@ -39,7 +39,7 @@ pub fn Fuse(comptime T: type) type {
         /// initializes a fuse filter with enough capacity for a set containing up to `size` elements.
         ///
         /// `deinit()` must be called by the caller to free the memory.
-        pub fn init(allocator: *Allocator, size: usize) !*Self {
+        pub fn init(allocator: Allocator, size: usize) !*Self {
             const self = try allocator.create(Self);
             var capacity = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
             capacity = capacity / FUSE_SLOTS * FUSE_SLOTS;
@@ -86,7 +86,7 @@ pub fn Fuse(comptime T: type) type {
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
         /// function call.
-        pub fn populate(self: *Self, allocator: *Allocator, keys: []u64) Error!void {
+        pub fn populate(self: *Self, allocator: Allocator, keys: []u64) Error!void {
             const iter = try util.sliceIterator(u64).init(allocator, keys);
             defer iter.deinit();
             return self.populateIter(allocator, iter);
@@ -100,7 +100,7 @@ pub fn Fuse(comptime T: type) type {
         /// call leads to the first element again.
         ///
         /// `keys.len()` must return the `usize` length.
-        pub fn populateIter(self: *Self, allocator: *Allocator, keys: anytype) Error!void {
+        pub fn populateIter(self: *Self, allocator: Allocator, keys: anytype) Error!void {
             var rng_counter: u64 = 1;
             self.seed = util.rngSplitMix64(&rng_counter);
 
@@ -286,9 +286,10 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     var random_matches: u64 = 0;
     const trials = 10000000;
     var i: u64 = 0;
-    var default_prng = std.rand.DefaultPrng.init(0);
+    var rng = std.rand.DefaultPrng.init(0);
+    const random = rng.random();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = default_prng.random.uintAtMost(u64, std.math.maxInt(u64));
+        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;
