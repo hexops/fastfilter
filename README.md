@@ -136,6 +136,18 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+### **v0.9.2**
+
+- Handle duplicated keys automatically
+- Added a `std.build.Pkg` definition
+- Fixed an unlikely bug
+- Updated usage instructions
+- Updated to Zig v0.10.0-dev.1736
+
+### **v0.9.1**
+
+- Updated to Zig v0.10.0-dev.36
+
 ### **v0.9.0**
 
 - Renamed repository github.com/hexops/xorfilter -> github.com/hexops/fastfilter to account for binary fuse filters.
