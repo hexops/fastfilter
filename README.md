@@ -27,10 +27,27 @@ Decide if xor or binary fuse filters fit your use case better: [should I use bin
 
 Get your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. ("It is not important to have a good hash function, but collisions should be unlikely (~1/2^64).")
 
-Here is a complete example:
+In a `libs` directory of your project:
+
+```
+git clone https://github.com/hexops/fastfilter
+```
+
+In your `build.zig`:
 
 ```zig
-const fastfilter = @import("../fastfilter/src/main.zig")
+const fastfilter = @import("libs/fastfilter/build.zig");
+
+pub fn build(b: *Builder) void {
+    ...
+    exe.addPackage(fastfilter.pkg);
+}
+```
+
+Here is a complete example of how to use the library:
+
+```zig
+const fastfilter = @import("fastfilter")
 
 test "mytest" {
     const allocator = std.heap.page_allocator;
