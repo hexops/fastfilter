@@ -302,13 +302,13 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "fuse4" {
-    try fuseTest(u4, 1000000 / 2, 568800);
+    try fuseTest(u4, 1000000 / 2, 568808);
 }
 
 test "fuse8" {
-    try fuseTest(u8, 1000000, 1137654);
+    try fuseTest(u8, 1000000, 1137662);
 }
 
 test "fuse16" {
-    try fuseTest(u16, 1000000, 2275260);
+    try fuseTest(u16, 1000000, 2275268);
 }
