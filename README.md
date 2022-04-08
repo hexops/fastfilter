@@ -27,19 +27,19 @@ Decide if xor or binary fuse filters fit your use case better: [should I use bin
 
 Get your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. ("It is not important to have a good hash function, but collisions should be unlikely (~1/2^64).")
 
-Keys must be unique, or else filter population will fail. If you don't have unique keys, you can use the `xorfilter.AutoUnique(u64)(keys)` helper to deduplicate (in typically O(N) time complexity), see the tests in `src/unique.zig` for usage examples.
+Keys must be unique, or else filter population will fail. If you don't have unique keys, you can use the `fastfilter.AutoUnique(u64)(keys)` helper to deduplicate (in typically O(N) time complexity), see the tests in `src/unique.zig` for usage examples.
 
 Here is a complete example:
 
 ```zig
-const xorfilter = @import("../xorfilter/src/main.zig")
+const fastfilter = @import("../fastfilter/src/main.zig")
 
 test "mytest" {
     const allocator = std.heap.page_allocator;
 
     // Initialize the binary fuse filter with room for 1 million keys.
     const size = 1_000_000;
-    const filter = try xorfilter.BinaryFuse8.init(allocator, size);
+    const filter = try fastfilter.BinaryFuse8.init(allocator, size);
     defer filter.deinit();
 
     // Generate some consecutive keys.
@@ -50,7 +50,7 @@ test "mytest" {
     }
 
     // If your keys are not unique, make them so:
-    keys = xorfilter.Unique(u64)(keys);
+    keys = fastfilter.Unique(u64)(keys);
 
     // Populate the filter with our keys. You can't update a xor / binary fuse filter after the
     // fact, instead you should build a new one.
