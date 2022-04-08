@@ -165,7 +165,9 @@ pub fn BinaryFuse(comptime T: type) type {
 
                 const mask_block: u64 = block - 1;
                 while (keys.next()) |key| {
-                    const hash: u64 = util.murmur64(key + self.seed);
+                    var sum: u64 = undefined;
+                    _ = @addWithOverflow(u64, key, self.seed, &sum);
+                    const hash: u64 = util.murmur64(sum);
 
                     const shift_count = @as(usize, 64) - @as(usize, block_bits);
                     var segment_index: u64 = if (shift_count >= 63) 0 else hash >> @truncate(u6, shift_count);
