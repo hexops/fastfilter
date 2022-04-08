@@ -213,7 +213,19 @@ pub fn BinaryFuse(comptime T: type) type {
                     err = (t2count[h1] < 4) or err;
                     err = (t2count[h2] < 4) or err;
                 }
-                if (err) continue;
+                if (err) {
+                    i = 0;
+                    while (i < size) : (i += 1) {
+                        reverse_order[i] = 0;
+                    }
+                    i = 0;
+                    while (i < capacity) : (i += 1) {
+                        t2count[i] = 0;
+                        t2hash[i] = 0;
+                    }
+                    self.seed = util.rngSplitMix64(&rng_counter);
+                    continue;
+                }
 
                 // End of key addition
                 var Qsize: u32 = 0;
