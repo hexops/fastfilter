@@ -136,6 +136,10 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+### **v0.9.3**
+
+- Fixed potential integer overflow.
+
 ### **v0.9.2**
 
 - Handle duplicated keys automatically
