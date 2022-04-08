@@ -26,4 +26,6 @@ test "exports" {
 
     var array = [_]i32{ 1, 2, 2 };
     _ = AutoUnique(i32, void)({}, array[0..]);
+
+    _ = @import("fusefilter.zig");
 }
