@@ -92,10 +92,8 @@ pub fn BinaryFuse(comptime T: type) type {
 
         /// populates the filter with the given keys.
         ///
-        /// The caller is responsible for ensuring that there are no duplicated keys.
-        ///
-        /// The inner loop will run up to max_iterations times (default 100) and will never fail,
-        /// except if there are duplicated keys.
+        /// The function could return an error after too many iterations, but it is statistically
+        /// unlikely and you probably don't need to worry about it.
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
         /// function call.
@@ -120,7 +118,7 @@ pub fn BinaryFuse(comptime T: type) type {
             var rng_counter: u64 = 0x726b2b9d438b9d4d;
             self.seed = util.rngSplitMix64(&rng_counter);
 
-            const size = keys.len();
+            var size = keys.len();
             const reverse_order = try allocator.alloc(u64, size + 1);
             defer allocator.free(reverse_order);
             std.mem.set(u64, reverse_order, 0);
@@ -180,6 +178,7 @@ pub fn BinaryFuse(comptime T: type) type {
                 }
 
                 var err = false;
+                var duplicates: u32 = 0;
                 i = 0;
                 while (i < size) : (i += 1) {
                     const hash = reverse_order[i];
@@ -194,6 +193,22 @@ pub fn BinaryFuse(comptime T: type) type {
                     t2count[h2] += 4;
                     t2hash[h2] ^= hash;
                     t2count[h2] ^= 2;
+                    // If we have duplicated hash values, then it is likely that the next comparison
+                    // is true
+                    if (t2hash[h0] & t2hash[h1] & t2hash[h2] == 0) {
+                        // next we do the actual test
+                        if (((t2hash[h0] == 0) and (t2count[h0] == 8)) or ((t2hash[h1] == 0) and (t2count[h1] == 8)) or ((t2hash[h2] == 0) and (t2count[h2] == 8))) {
+                            duplicates += 1;
+                            t2count[h0] -= 4;
+                            t2hash[h0] ^= hash;
+                            t2count[h1] -= 4;
+                            t2count[h1] ^= 1;
+                            t2hash[h1] ^= hash;
+                            t2count[h2] -= 4;
+                            t2count[h2] ^= 2;
+                            t2hash[h2] ^= hash;
+                        }
+                    }
                     err = (t2count[h0] < 4) or err;
                     err = (t2count[h1] < 4) or err;
                     err = (t2count[h2] < 4) or err;
@@ -240,8 +255,9 @@ pub fn BinaryFuse(comptime T: type) type {
                         t2hash[other_index2] ^= hash;
                     }
                 }
-                if (stacksize == size) {
+                if (stacksize + duplicates == size) {
                     // success
+                    size = stacksize;
                     break;
                 }
                 std.mem.set(u64, reverse_order[0..size], 0);
@@ -249,6 +265,7 @@ pub fn BinaryFuse(comptime T: type) type {
                 std.mem.set(u64, t2hash[0..capacity], 0);
                 self.seed = util.rngSplitMix64(&rng_counter);
             }
+            if (size == 0) return;
 
             var i: u32 = @truncate(u32, size - 1);
             while (i < size) : (i -%= 1) {
@@ -318,6 +335,7 @@ const Hashes = struct {
 inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
     // These parameters are very sensitive. Replacing `floor` by `round` can substantially affect
     // the construction time.
+    if (size == 0) return 4;
     if (arity == 3) {
         const shift_count = @truncate(u32, relaxedFloatToInt(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
@@ -352,32 +370,45 @@ inline fn fuseMod3(comptime T: type, x: T) T {
     return if (x > 2) x - 3 else x;
 }
 
+const special_size_duplicates = 1337;
+
 fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try BinaryFuse(T).init(allocator, size);
     comptime filter.max_iterations = 100; // proof we can modify max_iterations at comptime.
     defer filter.deinit();
 
-    var keys = try allocator.alloc(u64, size);
-    defer allocator.free(keys);
-    for (keys) |_, i| {
-        keys[i] = i;
+    var keys: []u64 = undefined;
+    if (size == special_size_duplicates) {
+        const duplicate_keys: [6]u64 = .{ 303, 1, 77, 31, 241, 303 };
+        keys = try allocator.alloc(u64, duplicate_keys.len);
+        for (keys) |_, i| {
+            keys[i] = duplicate_keys[i];
+        }
+    } else {
+        keys = try allocator.alloc(u64, size);
+        for (keys) |_, i| {
+            keys[i] = i;
+        }
     }
+    defer allocator.free(keys);
 
     try filter.populate(allocator, keys[0..]);
 
-    if (size == 0) {
-        try testing.expect(!filter.contain(0));
-        try testing.expect(!filter.contain(1));
+    if (size != special_size_duplicates) {
+        if (size == 0) {
+            try testing.expect(!filter.contain(0));
+            try testing.expect(!filter.contain(1));
+        }
+        if (size > 0) try testing.expect(filter.contain(0));
+        if (size > 1) try testing.expect(filter.contain(1));
+        if (size > 9) {
+            try testing.expect(filter.contain(1) == true);
+            try testing.expect(filter.contain(5) == true);
+            try testing.expect(filter.contain(9) == true);
+        }
+        if (size > 1234) try testing.expect(filter.contain(1234) == true);
     }
-    if (size > 0) try testing.expect(filter.contain(0));
-    if (size > 1) try testing.expect(filter.contain(1));
-    if (size > 9) {
-        try testing.expect(filter.contain(1) == true);
-        try testing.expect(filter.contain(5) == true);
-        try testing.expect(filter.contain(9) == true);
-    }
-    if (size > 1234) try testing.expect(filter.contain(1234) == true);
     try testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
 
     for (keys) |key| {
@@ -404,14 +435,14 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
 test "binaryFuse8_small_input_edge_cases" {
     // See https://github.com/FastFilter/xor_singleheader/issues/26
-    try binaryFuseTest(u8, 0, 67);
+    try binaryFuseTest(u8, 0, 76);
     try binaryFuseTest(u8, 1, 76);
     try binaryFuseTest(u8, 2, 76);
     try binaryFuseTest(u8, 3, 88);
 }
 
 test "binaryFuse8_zero" {
-    try binaryFuseTest(u8, 0, 67);
+    try binaryFuseTest(u8, 0, 76);
 }
 
 test "binaryFuse8_1" {
@@ -440,4 +471,8 @@ test "binaryFuse16" {
 
 test "binaryFuse32" {
     try binaryFuseTest(u32, 1_000_000, 4522048);
+}
+
+test "binaryFuse8_duplicate_keys" {
+    try binaryFuseTest(u8, special_size_duplicates, 2112);
 }
