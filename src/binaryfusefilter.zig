@@ -476,3 +476,7 @@ test "binaryFuse32" {
 test "binaryFuse8_duplicate_keys" {
     try binaryFuseTest(u8, special_size_duplicates, 2112);
 }
+
+test "binaryFuse8_mid_num_keys" {
+    try binaryFuseTest(u8, 11500, 14400);
+}
