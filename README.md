@@ -27,8 +27,6 @@ Decide if xor or binary fuse filters fit your use case better: [should I use bin
 
 Get your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. ("It is not important to have a good hash function, but collisions should be unlikely (~1/2^64).")
 
-Keys must be unique, or else filter population will fail. If you don't have unique keys, you can use the `fastfilter.AutoUnique(u64)(keys)` helper to deduplicate (in typically O(N) time complexity), see the tests in `src/unique.zig` for usage examples.
-
 Here is a complete example:
 
 ```zig
@@ -62,6 +60,8 @@ test "mytest" {
 ```
 
 (you can just add this project as a Git submodule in yours for now, as [Zig's official package manager is still under way](https://github.com/ziglang/zig/issues/943).)
+
+Binary fuse filters automatically deduplicate any keys during population. If you are using a different filter type (you probably shouldn't be!) then keys must be unique or else filter population will fail. You can use the `fastfilter.AutoUnique(u64)(keys)` helper to deduplicate (in typically O(N) time complexity), see the tests in `src/unique.zig` for usage examples.
 
 ## Serialization
 
