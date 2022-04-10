@@ -32,7 +32,7 @@ pub fn Fuse(comptime T: type) type {
         fingerprints: []T, // has room for 3*segmentLength values
 
         /// probability of success should always be > 0.5 so 100 iterations is highly unlikely
-        maxIterations: usize = 100,
+        max_iterations: usize = 100,
 
         const Self = @This();
 
@@ -81,7 +81,7 @@ pub fn Fuse(comptime T: type) type {
         ///
         /// The caller is responsible for ensuring that there are no duplicated keys.
         ///
-        /// The inner loop will run up to maxIterations times (default 100) and will never fail,
+        /// The inner loop will run up to max_iterations times (default 100) and will never fail,
         /// except if there are duplicated keys.
         ///
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
@@ -114,7 +114,7 @@ pub fn Fuse(comptime T: type) type {
 
             var loop: usize = 0;
             while (true) : (loop += 1) {
-                if (loop + 1 > self.maxIterations) {
+                if (loop + 1 > self.max_iterations) {
                     return Error.KeysLikelyNotUnique; // too many iterations, keys are not unique.
                 }
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
@@ -261,7 +261,7 @@ const Keyindex = struct {
 fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try Fuse(T).init(allocator, size);
-    comptime filter.maxIterations = 100; // proof we can modify maxIterations at comptime.
+    comptime filter.max_iterations = 100; // proof we can modify max_iterations at comptime.
     defer filter.deinit();
 
     var keys = try allocator.alloc(u64, size);
