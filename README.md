@@ -140,6 +140,7 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 - `SliceIterator` now stores `[]const T` instead of `[]T` internally.
 - `BinaryFuseFilter.max_iterations` is now a constant.
 - Improved usage example.
+- Properly free xorfilter/fusefilter fingerprints.
 
 ### **v0.9.3**
 

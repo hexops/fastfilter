@@ -51,6 +51,7 @@ pub fn Xor(comptime T: type) type {
         }
 
         pub inline fn deinit(self: *Self) void {
+            self.allocator.free(self.fingerprints);
             self.allocator.destroy(self);
         }
 
