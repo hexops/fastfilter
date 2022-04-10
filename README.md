@@ -54,8 +54,8 @@ test "mytest" {
 
     // Initialize the binary fuse filter with room for 1 million keys.
     const size = 1_000_000;
-    const filter = try fastfilter.BinaryFuse8.init(allocator, size);
-    defer filter.deinit();
+    var filter = try fastfilter.BinaryFuse8.init(allocator, size);
+    defer filter.deinit(allocator);
 
     // Generate some consecutive keys.
     var keys = try allocator.alloc(u64, size);
@@ -135,6 +135,7 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 
 ### **v0.10.0** (not released)
 
+- All types are now unmanaged (allocator must be passed via parameters)
 - Renamed `util.sliceIterator` to `fastfilter.SliceIterator`
 - `SliceIterator` is now unmanaged / does not store an allocator.
 - `SliceIterator` now stores `[]const T` instead of `[]T` internally.

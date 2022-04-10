@@ -35,7 +35,6 @@ const max_iterations: usize = 100;
 /// strings or other types, you first need to hash them to a 64-bit integer.
 pub fn BinaryFuse(comptime T: type) type {
     return struct {
-        allocator: Allocator,
         seed: u64,
         segment_length: u32,
         segment_length_mask: u32,
@@ -49,7 +48,7 @@ pub fn BinaryFuse(comptime T: type) type {
         /// elements.
         ///
         /// `deinit()` must be called by the caller to free the memory.
-        pub fn init(allocator: Allocator, size: usize) !*Self {
+        pub fn init(allocator: Allocator, size: usize) !Self {
             const arity: u32 = 3;
             var segment_length = calculateSegmentLength(arity, size);
             if (segment_length > 262144) {
@@ -69,9 +68,7 @@ pub fn BinaryFuse(comptime T: type) type {
             slice_length = (segment_count + arity - 1) * segment_length;
             const segment_count_length = segment_count * segment_length;
 
-            const self = try allocator.create(Self);
-            self.* = Self{
-                .allocator = allocator,
+            return Self{
                 .seed = undefined,
                 .segment_length = segment_length,
                 .segment_length_mask = segment_length_mask,
@@ -79,12 +76,10 @@ pub fn BinaryFuse(comptime T: type) type {
                 .segment_count_length = segment_count_length,
                 .fingerprints = try allocator.alloc(T, slice_length),
             };
-            return self;
         }
 
-        pub inline fn deinit(self: *Self) void {
-            self.allocator.free(self.fingerprints);
-            self.allocator.destroy(self);
+        pub inline fn deinit(self: *Self, allocator: Allocator) void {
+            allocator.free(self.fingerprints);
         }
 
         /// reports the size in bytes of the filter.
@@ -391,8 +386,8 @@ const special_size_duplicates = 1337;
 
 fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
-    const filter = try BinaryFuse(T).init(allocator, size);
-    defer filter.deinit();
+    var filter = try BinaryFuse(T).init(allocator, size);
+    defer filter.deinit(allocator);
 
     var keys: []u64 = undefined;
     if (size == special_size_duplicates) {
@@ -451,48 +446,48 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
 test "binaryFuse8_small_input_edge_cases" {
     // See https://github.com/FastFilter/xor_singleheader/issues/26
-    try binaryFuseTest(u8, 0, 68);
-    try binaryFuseTest(u8, 1, 68);
-    try binaryFuseTest(u8, 2, 68);
-    try binaryFuseTest(u8, 3, 80);
+    try binaryFuseTest(u8, 0, 52);
+    try binaryFuseTest(u8, 1, 52);
+    try binaryFuseTest(u8, 2, 52);
+    try binaryFuseTest(u8, 3, 64);
 }
 
 test "binaryFuse8_zero" {
-    try binaryFuseTest(u8, 0, 68);
+    try binaryFuseTest(u8, 0, 52);
 }
 
 test "binaryFuse8_1" {
-    try binaryFuseTest(u8, 1, 68);
+    try binaryFuseTest(u8, 1, 52);
 }
 
 test "binaryFuse8_10" {
-    try binaryFuseTest(u8, 10, 104);
+    try binaryFuseTest(u8, 10, 88);
 }
 
 test "binaryFuse8" {
-    try binaryFuseTest(u8, 1_000_000, 1130552);
+    try binaryFuseTest(u8, 1_000_000, 1130536);
 }
 
 test "binaryFuse8_2m" {
-    try binaryFuseTest(u8, 2_000_000, 2261048);
+    try binaryFuseTest(u8, 2_000_000, 2261032);
 }
 
 test "binaryFuse8_5m" {
-    try binaryFuseTest(u8, 5_000_000, 5636152);
+    try binaryFuseTest(u8, 5_000_000, 5636136);
 }
 
 test "binaryFuse16" {
-    try binaryFuseTest(u16, 1_000_000, 2261048);
+    try binaryFuseTest(u16, 1_000_000, 2261032);
 }
 
 test "binaryFuse32" {
-    try binaryFuseTest(u32, 1_000_000, 4522040);
+    try binaryFuseTest(u32, 1_000_000, 4522024);
 }
 
 test "binaryFuse8_duplicate_keys" {
-    try binaryFuseTest(u8, special_size_duplicates, 2104);
+    try binaryFuseTest(u8, special_size_duplicates, 2088);
 }
 
 test "binaryFuse8_mid_num_keys" {
-    try binaryFuseTest(u8, 11500, 14392);
+    try binaryFuseTest(u8, 11500, 14376);
 }

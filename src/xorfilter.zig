@@ -24,7 +24,6 @@ pub const Xor16 = Xor(u16);
 /// Xor8 is the recommended default, no more than a 0.3% false-positive probability.
 pub fn Xor(comptime T: type) type {
     return struct {
-        allocator: Allocator,
         seed: u64,
         blockLength: u64,
         fingerprints: []T, // has room for 3*blockLength values
@@ -37,22 +36,18 @@ pub fn Xor(comptime T: type) type {
         /// initializes a Xor filter with enough capacity for a set containing up to `size` elements.
         ///
         /// `deinit()` must be called by the caller to free the memory.
-        pub fn init(allocator: Allocator, size: usize) !*Self {
-            const self = try allocator.create(Self);
+        pub fn init(allocator: Allocator, size: usize) !Self {
             var capacity = @floatToInt(usize, 32 + 1.23 * @intToFloat(f64, size));
             capacity = capacity / 3 * 3;
-            self.* = Self{
-                .allocator = allocator,
+            return Self{
                 .seed = 0,
                 .fingerprints = try allocator.alloc(T, capacity),
                 .blockLength = capacity / 3,
             };
-            return self;
         }
 
-        pub inline fn deinit(self: *Self) void {
-            self.allocator.free(self.fingerprints);
-            self.allocator.destroy(self);
+        pub inline fn deinit(self: *Self, allocator: Allocator) void {
+            allocator.free(self.fingerprints);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
@@ -341,9 +336,9 @@ const Keyindex = struct {
 
 fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
-    const filter = try Xor(T).init(allocator, size);
+    var filter = try Xor(T).init(allocator, size);
     comptime filter.max_iterations = 100; // proof we can modify max_iterations at comptime.
-    defer filter.deinit();
+    defer filter.deinit(allocator);
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
@@ -384,15 +379,15 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "xor8" {
-    try xorTest(u8, 10000, 12386);
+    try xorTest(u8, 10000, 12370);
 }
 
 test "xor16" {
-    try xorTest(u16, 10000, 24716);
+    try xorTest(u16, 10000, 24700);
 }
 
 test "xor20" {
-    try xorTest(u20, 10000, 49376);
+    try xorTest(u20, 10000, 49360);
 }
 
 test "xor32" {
@@ -402,7 +397,7 @@ test "xor32" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u32, 1000000, 4920176);
+    try xorTest(u32, 1000000, 4920160);
 }
 
 test "xor64" {
@@ -412,5 +407,5 @@ test "xor64" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u64, 1000000, 9840296);
+    try xorTest(u64, 1000000, 9840280);
 }

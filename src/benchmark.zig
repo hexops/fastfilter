@@ -56,8 +56,8 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     var timer = try Timer.start();
 
     // Initialize filter.
-    const filter = try Filter.init(filterAllocator, size);
-    defer filter.deinit();
+    var filter = try Filter.init(filterAllocator, size);
+    defer filter.deinit(allocator);
 
     // Generate keys.
     var keys = try allocator.alloc(u64, size);

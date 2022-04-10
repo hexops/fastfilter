@@ -26,7 +26,6 @@ pub const Fuse8 = Fuse(u8);
 /// strings or other types, you first need to hash them to a 64-bit integer.
 pub fn Fuse(comptime T: type) type {
     return struct {
-        allocator: Allocator,
         seed: u64,
         segmentLength: u64, // == slotCount / FUSE_SLOTS
         fingerprints: []T, // has room for 3*segmentLength values
@@ -39,22 +38,18 @@ pub fn Fuse(comptime T: type) type {
         /// initializes a fuse filter with enough capacity for a set containing up to `size` elements.
         ///
         /// `deinit()` must be called by the caller to free the memory.
-        pub fn init(allocator: Allocator, size: usize) !*Self {
-            const self = try allocator.create(Self);
+        pub fn init(allocator: Allocator, size: usize) !Self {
             var capacity = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
             capacity = capacity / FUSE_SLOTS * FUSE_SLOTS;
-            self.* = Self{
-                .allocator = allocator,
+            return Self{
                 .seed = 0,
                 .fingerprints = try allocator.alloc(T, capacity),
                 .segmentLength = capacity / FUSE_SLOTS,
             };
-            return self;
         }
 
-        pub inline fn deinit(self: *Self) void {
-            self.allocator.free(self.fingerprints);
-            self.allocator.destroy(self);
+        pub inline fn deinit(self: *Self, allocator: Allocator) void {
+            allocator.free(self.fingerprints);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
@@ -261,9 +256,9 @@ const Keyindex = struct {
 
 fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
-    const filter = try Fuse(T).init(allocator, size);
+    var filter = try Fuse(T).init(allocator, size);
     comptime filter.max_iterations = 100; // proof we can modify max_iterations at comptime.
-    defer filter.deinit();
+    defer filter.deinit(allocator);
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
@@ -302,13 +297,13 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "fuse4" {
-    try fuseTest(u4, 1000000 / 2, 568808);
+    try fuseTest(u4, 1000000 / 2, 568792);
 }
 
 test "fuse8" {
-    try fuseTest(u8, 1000000, 1137662);
+    try fuseTest(u8, 1000000, 1137646);
 }
 
 test "fuse16" {
-    try fuseTest(u16, 1000000, 2275268);
+    try fuseTest(u16, 1000000, 2275252);
 }

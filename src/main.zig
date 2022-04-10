@@ -13,17 +13,17 @@ pub const SliceIterator = @import("util.zig").SliceIterator;
 test "exports" {
     const allocator = std.heap.page_allocator;
 
-    const binaryFuse8Filter = try BinaryFuse8.init(allocator, 100);
-    defer binaryFuse8Filter.deinit();
+    var binaryFuse8Filter = try BinaryFuse8.init(allocator, 100);
+    defer binaryFuse8Filter.deinit(allocator);
 
-    const xorFilter = try Xor(u8).init(allocator, 1);
-    defer xorFilter.deinit();
+    var xorFilter = try Xor(u8).init(allocator, 1);
+    defer xorFilter.deinit(allocator);
 
-    const xor8Filter = try Xor8.init(allocator, 1);
-    defer xor8Filter.deinit();
+    var xor8Filter = try Xor8.init(allocator, 1);
+    defer xor8Filter.deinit(allocator);
 
-    const xor16Filter = try Xor16.init(allocator, 1);
-    defer xor16Filter.deinit();
+    var xor16Filter = try Xor16.init(allocator, 1);
+    defer xor16Filter.deinit(allocator);
 
     var array = [_]i32{ 1, 2, 2 };
     _ = AutoUnique(i32, void)({}, array[0..]);
