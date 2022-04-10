@@ -138,6 +138,7 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 - Renamed `util.sliceIterator` to `fastfilter.SliceIterator`
 - `SliceIterator` is now unmanaged / does not store an allocator.
 - `SliceIterator` now stores `[]const T` instead of `[]T` internally.
+- `BinaryFuseFilter.max_iterations` is now a constant.
 - Improved usage example.
 
 ### **v0.9.3**

@@ -11,6 +11,11 @@ const Error = util.Error;
 /// See `BinaryFuse` for more details.
 pub const BinaryFuse8 = BinaryFuse(u8);
 
+/// probability of success should always be > 0.5 so 100 iterations is highly unlikely (read:
+/// statistically unlikely to happen. If it does, probably we need to increase max_iterations or
+/// contact the fastfilter authors.)
+const max_iterations: usize = 100;
+
 /// A binary fuse filter. This is an extension of fuse filters:
 ///
 /// Dietzfelbinger & Walzer's fuse filters, described in "Dense Peelable Random Uniform Hypergraphs",
@@ -37,9 +42,6 @@ pub fn BinaryFuse(comptime T: type) type {
         segment_count: u32,
         segment_count_length: u32,
         fingerprints: []T,
-
-        /// probability of success should always be > 0.5 so 100 iterations is highly unlikely
-        max_iterations: usize = 100,
 
         const Self = @This();
 
@@ -151,8 +153,10 @@ pub fn BinaryFuse(comptime T: type) type {
             reverse_order[size] = 1;
             var loop: usize = 0;
             while (true) : (loop += 1) {
-                if (loop + 1 > self.max_iterations) {
-                    return Error.KeysLikelyNotUnique; // too many iterations, keys are not unique.
+                if (loop + 1 > max_iterations) {
+                    // too many iterations, this is statistically unlikely to happen. If it does,
+                    // probably we need to increase max_iterations or contact the fastfilter authors
+                    return Error.KeysLikelyNotUnique;
                 }
 
                 var i: u32 = 0;
@@ -388,7 +392,6 @@ const special_size_duplicates = 1337;
 fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     const filter = try BinaryFuse(T).init(allocator, size);
-    comptime filter.max_iterations = 100; // proof we can modify max_iterations at comptime.
     defer filter.deinit();
 
     var keys: []u64 = undefined;
@@ -448,48 +451,48 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
 test "binaryFuse8_small_input_edge_cases" {
     // See https://github.com/FastFilter/xor_singleheader/issues/26
-    try binaryFuseTest(u8, 0, 76);
-    try binaryFuseTest(u8, 1, 76);
-    try binaryFuseTest(u8, 2, 76);
-    try binaryFuseTest(u8, 3, 88);
+    try binaryFuseTest(u8, 0, 68);
+    try binaryFuseTest(u8, 1, 68);
+    try binaryFuseTest(u8, 2, 68);
+    try binaryFuseTest(u8, 3, 80);
 }
 
 test "binaryFuse8_zero" {
-    try binaryFuseTest(u8, 0, 76);
+    try binaryFuseTest(u8, 0, 68);
 }
 
 test "binaryFuse8_1" {
-    try binaryFuseTest(u8, 1, 76);
+    try binaryFuseTest(u8, 1, 68);
 }
 
 test "binaryFuse8_10" {
-    try binaryFuseTest(u8, 10, 112);
+    try binaryFuseTest(u8, 10, 104);
 }
 
 test "binaryFuse8" {
-    try binaryFuseTest(u8, 1_000_000, 1130560);
+    try binaryFuseTest(u8, 1_000_000, 1130552);
 }
 
 test "binaryFuse8_2m" {
-    try binaryFuseTest(u8, 2_000_000, 2261056);
+    try binaryFuseTest(u8, 2_000_000, 2261048);
 }
 
 test "binaryFuse8_5m" {
-    try binaryFuseTest(u8, 5_000_000, 5636160);
+    try binaryFuseTest(u8, 5_000_000, 5636152);
 }
 
 test "binaryFuse16" {
-    try binaryFuseTest(u16, 1_000_000, 2261056);
+    try binaryFuseTest(u16, 1_000_000, 2261048);
 }
 
 test "binaryFuse32" {
-    try binaryFuseTest(u32, 1_000_000, 4522048);
+    try binaryFuseTest(u32, 1_000_000, 4522040);
 }
 
 test "binaryFuse8_duplicate_keys" {
-    try binaryFuseTest(u8, special_size_duplicates, 2112);
+    try binaryFuseTest(u8, special_size_duplicates, 2104);
 }
 
 test "binaryFuse8_mid_num_keys" {
-    try binaryFuseTest(u8, 11500, 14400);
+    try binaryFuseTest(u8, 11500, 14392);
 }
