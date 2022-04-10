@@ -136,6 +136,7 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 ### **v0.10.0** (not released)
 
 - Renamed `util.sliceIterator` to `fastfilter.SliceIterator`
+- `SliceIterator` is now unmanaged / does not store an allocator.
 - Improved usage example.
 
 ### **v0.9.3**
