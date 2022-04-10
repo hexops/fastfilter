@@ -47,10 +47,10 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     const allocator = std.heap.page_allocator;
 
     var filterMA = MeasuredAllocator.init(allocator);
-    var filterAllocator = &filterMA.allocator;
+    var filterAllocator = filterMA.allocator();
 
     var buildMA = MeasuredAllocator.init(allocator);
-    var buildAllocator = &buildMA.allocator;
+    var buildAllocator = buildMA.allocator();
 
     const stdout = std.io.getStdOut().writer();
     var timer = try Timer.start();
@@ -112,7 +112,7 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
 }
 
 fn usage() void {
-    std.debug.warn(
+    std.log.warn(
         \\benchmark [options]
         \\
         \\Options:
@@ -124,7 +124,7 @@ fn usage() void {
 pub fn main() !void {
     var buffer: [1024]u8 = undefined;
     var fixed = std.heap.FixedBufferAllocator.init(buffer[0..]);
-    const args = try std.process.argsAlloc(&fixed.allocator);
+    const args = try std.process.argsAlloc(fixed.allocator());
 
     var num_trials: usize = 100_000_000;
     var i: usize = 1;

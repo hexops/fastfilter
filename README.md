@@ -140,8 +140,10 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 - `SliceIterator` is now unmanaged / does not store an allocator.
 - `SliceIterator` now stores `[]const T` instead of `[]T` internally.
 - `BinaryFuseFilter.max_iterations` is now a constant.
+- Added `fastfilter.MeasuredAllocator` for measuring allocations.
 - Improved usage example.
 - Properly free xorfilter/fusefilter fingerprints.
+- Updated benchmark to latest Zig version.
 
 ### **v0.9.3**
 

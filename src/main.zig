@@ -9,6 +9,7 @@ pub const AutoUnique = @import("unique.zig").AutoUnique;
 pub const Unique = @import("unique.zig").Unique;
 pub const Error = @import("util.zig").Error;
 pub const SliceIterator = @import("util.zig").SliceIterator;
+pub const MeasuredAllocator = @import("MeasuredAllocator.zig");
 
 test "exports" {
     const allocator = std.heap.page_allocator;
@@ -29,6 +30,8 @@ test "exports" {
     _ = AutoUnique(i32, void)({}, array[0..]);
 
     _ = SliceIterator;
+    _ = MeasuredAllocator;
 
     _ = @import("fusefilter.zig");
+    _ = @import("benchmark.zig");
 }
