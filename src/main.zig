@@ -8,6 +8,7 @@ pub const Xor16 = @import("xorfilter.zig").Xor16;
 pub const AutoUnique = @import("unique.zig").AutoUnique;
 pub const Unique = @import("unique.zig").Unique;
 pub const Error = @import("util.zig").Error;
+pub const SliceIterator = @import("util.zig").SliceIterator;
 
 test "exports" {
     const allocator = std.heap.page_allocator;
@@ -26,6 +27,8 @@ test "exports" {
 
     var array = [_]i32{ 1, 2, 2 };
     _ = AutoUnique(i32, void)({}, array[0..]);
+
+    _ = SliceIterator;
 
     _ = @import("fusefilter.zig");
 }
