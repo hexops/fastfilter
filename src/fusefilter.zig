@@ -87,7 +87,7 @@ pub fn Fuse(comptime T: type) type {
         /// The provided allocator will be used for creating temporary buffers that do not outlive the
         /// function call.
         pub fn populate(self: *Self, allocator: Allocator, keys: []u64) Error!void {
-            const iter = try util.sliceIterator(u64).init(allocator, keys);
+            const iter = try util.SliceIterator(u64).init(allocator, keys);
             defer iter.deinit();
             return self.populateIter(allocator, iter);
         }

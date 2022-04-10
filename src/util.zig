@@ -34,7 +34,7 @@ pub inline fn fingerprint(hash: u64) u64 {
     return hash ^ (hash >> 32);
 }
 
-pub fn sliceIterator(comptime T: type) type {
+pub fn SliceIterator(comptime T: type) type {
     return struct {
         allocator: Allocator,
         slice: []T,
