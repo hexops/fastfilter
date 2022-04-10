@@ -64,9 +64,6 @@ test "mytest" {
         keys[i] = i;
     }
 
-    // If your keys are not unique, make them so:
-    keys = fastfilter.Unique(u64)(keys);
-
     // Populate the filter with our keys. You can't update a xor / binary fuse filter after the
     // fact, instead you should build a new one.
     try filter.populate(allocator, keys[0..]);
@@ -135,6 +132,10 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 ## Changelog
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
+
+### **v0.10.0** (not released)
+
+- Improved usage example.
 
 ### **v0.9.3**
 
