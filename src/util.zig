@@ -36,12 +36,12 @@ pub inline fn fingerprint(hash: u64) u64 {
 
 pub fn SliceIterator(comptime T: type) type {
     return struct {
-        slice: []T,
+        slice: []const T,
         i: usize = 0,
 
         const Self = @This();
 
-        pub inline fn init(slice: []T) Self {
+        pub inline fn init(slice: []const T) Self {
             return .{ .slice = slice };
         }
 
