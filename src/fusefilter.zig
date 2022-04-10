@@ -48,12 +48,12 @@ pub fn Fuse(comptime T: type) type {
             };
         }
 
-        pub inline fn deinit(self: *Self, allocator: Allocator) void {
+        pub inline fn deinit(self: *const Self, allocator: Allocator) void {
             allocator.free(self.fingerprints);
         }
 
         /// reports if the specified key is within the set with false-positive rate.
-        pub inline fn contain(self: *Self, key: u64) bool {
+        pub inline fn contain(self: *const Self, key: u64) bool {
             var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             var r0 = @truncate(u32, hash);
@@ -69,7 +69,7 @@ pub fn Fuse(comptime T: type) type {
         }
 
         /// reports the size in bytes of the filter.
-        pub inline fn sizeInBytes(self: *Self) usize {
+        pub inline fn sizeInBytes(self: *const Self) usize {
             return FUSE_SLOTS * self.segmentLength * @sizeOf(T) + @sizeOf(Self);
         }
 

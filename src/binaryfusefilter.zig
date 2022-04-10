@@ -78,12 +78,12 @@ pub fn BinaryFuse(comptime T: type) type {
             };
         }
 
-        pub inline fn deinit(self: *Self, allocator: Allocator) void {
+        pub inline fn deinit(self: *const Self, allocator: Allocator) void {
             allocator.free(self.fingerprints);
         }
 
         /// reports the size in bytes of the filter.
-        pub inline fn sizeInBytes(self: *Self) usize {
+        pub inline fn sizeInBytes(self: *const Self) usize {
             return self.fingerprints.len * @sizeOf(T) + @sizeOf(Self);
         }
 
@@ -295,7 +295,7 @@ pub fn BinaryFuse(comptime T: type) type {
         }
 
         /// reports if the specified key is within the set with false-positive rate.
-        pub inline fn contain(self: *Self, key: u64) bool {
+        pub inline fn contain(self: *const Self, key: u64) bool {
             var hash = util.mixSplit(key, self.seed);
             var f = @truncate(T, util.fingerprint(hash));
             const hashes = self.fuseHashBatch(hash);
@@ -303,7 +303,7 @@ pub fn BinaryFuse(comptime T: type) type {
             return f == 0;
         }
 
-        inline fn fuseHashBatch(self: *Self, hash: u64) Hashes {
+        inline fn fuseHashBatch(self: *const Self, hash: u64) Hashes {
             const hi: u64 = mulhi(hash, self.segment_count_length);
             var ans: Hashes = undefined;
             ans.h0 = @truncate(u32, hi);
