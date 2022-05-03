@@ -133,6 +133,10 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+### **v0.10.1**
+
+- Updated to the latest version of Zig `0.10.0-dev.2024+d127c1d59`
+
 ### **v0.10.0**
 
 - All types are now unmanaged (allocator must be passed via parameters)

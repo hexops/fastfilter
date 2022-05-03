@@ -56,7 +56,7 @@ pub fn BinaryFuse(comptime T: type) type {
             }
             const segment_length_mask = segment_length - 1;
             const size_factor: f64 = if (size == 0) 4 else calculateSizeFactor(arity, size);
-            const capacity = if (size <= 1) 0 else @floatToInt(u32, math.round(@intToFloat(f64, size) * size_factor));
+            const capacity = if (size <= 1) 0 else @floatToInt(u32, @round(@intToFloat(f64, size) * size_factor));
             const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length -% (arity - 1);
             var slice_length = (init_segment_count +% arity - 1) * segment_length;
             var segment_count = (slice_length + segment_length - 1) / segment_length;
@@ -349,10 +349,10 @@ inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
     // the construction time.
     if (size == 0) return 4;
     if (arity == 3) {
-        const shift_count = @truncate(u32, relaxedFloatToInt(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
+        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     } else if (arity == 4) {
-        const shift_count = @truncate(u32, relaxedFloatToInt(usize, math.floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
+        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     }
     return 65536;
