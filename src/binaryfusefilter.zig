@@ -6,6 +6,9 @@ const testing = std.testing;
 const util = @import("util.zig");
 const Error = util.Error;
 
+const builtin = @import("builtin");
+const is_debug = builtin.mode == .Debug;
+
 /// BinaryFuse8 provides a binary fuse filter with 8-bit fingerprints.
 ///
 /// See `BinaryFuse` for more details.
@@ -143,6 +146,8 @@ pub fn BinaryFuse(comptime T: type) type {
             const start_pos = try allocator.alloc(u32, @as(usize, 1) << block_bits);
             defer allocator.free(start_pos);
 
+            var expect_num_keys: ?usize = null;
+
             var h012: [5]u32 = undefined;
 
             reverse_order[size] = 1;
@@ -162,7 +167,9 @@ pub fn BinaryFuse(comptime T: type) type {
                 }
 
                 const mask_block: u64 = block - 1;
+                var got_num_keys: usize = 0;
                 while (keys.next()) |key| {
+                    if (is_debug) got_num_keys += 1;
                     var sum: u64 = undefined;
                     _ = @addWithOverflow(u64, key, self.seed, &sum);
                     const hash: u64 = util.murmur64(sum);
@@ -175,6 +182,12 @@ pub fn BinaryFuse(comptime T: type) type {
                     }
                     reverse_order[start_pos[segment_index]] = hash;
                     start_pos[segment_index] += 1;
+                }
+                if (is_debug) {
+                    if (expect_num_keys) |expect| {
+                        if (expect != got_num_keys) @panic("fastfilter: iterator illegal: does not wrap around");
+                    }
+                    expect_num_keys = got_num_keys;
                 }
 
                 var err = false;
