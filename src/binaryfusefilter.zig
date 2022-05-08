@@ -183,28 +183,28 @@ pub fn BinaryFuse(comptime T: type) type {
                 while (i < size) : (i += 1) {
                     const hash = reverse_order[i];
                     const h0 = self.fuseHash(0, hash);
-                    t2count[h0] += 4;
-                    t2hash[h0] ^= hash;
                     const h1 = self.fuseHash(1, hash);
-                    t2count[h1] += 4;
+                    const h2 = self.fuseHash(2, hash);
+                    t2count[h0] +%= 4;
+                    t2hash[h0] ^= hash;
+                    t2count[h1] +%= 4;
                     t2count[h1] ^= 1;
                     t2hash[h1] ^= hash;
-                    const h2 = self.fuseHash(2, hash);
-                    t2count[h2] += 4;
-                    t2hash[h2] ^= hash;
+                    t2count[h2] +%= 4;
                     t2count[h2] ^= 2;
+                    t2hash[h2] ^= hash;
                     // If we have duplicated hash values, then it is likely that the next comparison
                     // is true
                     if (t2hash[h0] & t2hash[h1] & t2hash[h2] == 0) {
                         // next we do the actual test
                         if (((t2hash[h0] == 0) and (t2count[h0] == 8)) or ((t2hash[h1] == 0) and (t2count[h1] == 8)) or ((t2hash[h2] == 0) and (t2count[h2] == 8))) {
                             duplicates += 1;
-                            t2count[h0] -= 4;
+                            t2count[h0] -%= 4;
                             t2hash[h0] ^= hash;
-                            t2count[h1] -= 4;
+                            t2count[h1] -%= 4;
                             t2count[h1] ^= 1;
                             t2hash[h1] ^= hash;
-                            t2count[h2] -= 4;
+                            t2count[h2] -%= 4;
                             t2count[h2] ^= 2;
                             t2hash[h2] ^= hash;
                         }
