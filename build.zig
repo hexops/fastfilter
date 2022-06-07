@@ -11,11 +11,13 @@ pub fn build(b: *std.build.Builder) void {
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);
+
+    _ = pkg;
 }
 
 pub const pkg = std.build.Pkg{
     .name = "fastfilter",
-    .path = .{ .path = thisDir() ++ "/src/main.zig" },
+    .source = .{ .path = thisDir() ++ "/src/main.zig" },
 };
 
 fn thisDir() []const u8 {

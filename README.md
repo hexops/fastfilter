@@ -133,6 +133,10 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+### **v0.10.3**
+
+- Updated to the latest version of Zig `0.10.0-dev.2524+e9fc58eab` (`build.zig` `.path` -> `.source` change.)
+
 ### **v0.10.2**
 
 - Fixed a few correctness / integer overflow/underflow possibilities where we were inconsistent with the Go/C implementations of binary fuse filters.
