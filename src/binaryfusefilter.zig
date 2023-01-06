@@ -170,8 +170,7 @@ pub fn BinaryFuse(comptime T: type) type {
                 var got_num_keys: usize = 0;
                 while (keys.next()) |key| {
                     if (is_debug) got_num_keys += 1;
-                    var sum: u64 = undefined;
-                    _ = @addWithOverflow(u64, key, self.seed, &sum);
+                    const sum: u64 = key +% self.seed;
                     const hash: u64 = util.murmur64(sum);
 
                     const shift_count = @as(usize, 64) - @as(usize, block_bits);
