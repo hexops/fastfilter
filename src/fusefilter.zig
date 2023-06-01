@@ -257,7 +257,6 @@ const Keyindex = struct {
 fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     const allocator = std.heap.page_allocator;
     var filter = try Fuse(T).init(allocator, size);
-    comptime filter.max_iterations = 100; // proof we can modify max_iterations at comptime.
     defer filter.deinit(allocator);
 
     var keys = try allocator.alloc(u64, size);

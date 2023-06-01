@@ -1,4 +1,5 @@
 const std = @import("std");
+const testing = std.testing;
 
 pub const BinaryFuse = @import("binaryfusefilter.zig").BinaryFuse;
 pub const BinaryFuse8 = @import("binaryfusefilter.zig").BinaryFuse8;
@@ -32,6 +33,6 @@ test "exports" {
     _ = SliceIterator;
     _ = MeasuredAllocator;
 
-    _ = @import("fusefilter.zig");
-    _ = @import("benchmark.zig");
+    testing.refAllDecls(@import("fusefilter.zig"));
+    testing.refAllDecls(@import("benchmark.zig"));
 }

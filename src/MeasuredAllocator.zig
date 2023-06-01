@@ -31,29 +31,38 @@ pub fn init(parent_allocator: Allocator) MeasuredAllocator {
 }
 
 pub fn allocator(self: *MeasuredAllocator) Allocator {
-    return Allocator.init(self, alloc, resize, free);
+    return .{
+        .ptr = self,
+        .vtable = &.{
+            .alloc = allocFn,
+            .resize = resizeFn,
+            .free = freeFn,
+        },
+    };
 }
 
-fn alloc(self: *MeasuredAllocator, len: usize, ptr_align: u29, len_align: u29, ra: usize) error{OutOfMemory}![]u8 {
-    const result = self.parent_allocator.rawAlloc(len, ptr_align, len_align, ra);
+fn allocFn(ptr: *anyopaque, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
+    const self = @ptrCast(*MeasuredAllocator, @alignCast(@alignOf(MeasuredAllocator), ptr));
+    const result = self.parent_allocator.rawAlloc(len, ptr_align, ret_addr);
     if (result) |_| {
         self.state.current_memory_usage_bytes += len;
         if (self.state.current_memory_usage_bytes > self.state.peak_memory_usage_bytes) self.state.peak_memory_usage_bytes = self.state.current_memory_usage_bytes;
-    } else |_| {}
+    }
     return result;
 }
 
-fn resize(self: *MeasuredAllocator, buf: []u8, buf_align: u29, new_len: usize, len_align: u29, ra: usize) ?usize {
-    if (self.parent_allocator.rawResize(buf, buf_align, new_len, len_align, ra)) |resized_len| {
+fn resizeFn(ptr: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr: usize) bool {
+    const self = @ptrCast(*MeasuredAllocator, @alignCast(@alignOf(MeasuredAllocator), ptr));
+    if (self.parent_allocator.rawResize(buf, buf_align, new_len, ret_addr)) {
         self.state.current_memory_usage_bytes -= buf.len - new_len;
         if (self.state.current_memory_usage_bytes > self.state.peak_memory_usage_bytes) self.state.peak_memory_usage_bytes = self.state.current_memory_usage_bytes;
-        return resized_len;
+        return true;
     }
-    std.debug.assert(new_len > buf.len);
-    return null;
+    return false;
 }
 
-fn free(self: *MeasuredAllocator, buf: []u8, buf_align: u29, ra: usize) void {
-    self.parent_allocator.rawFree(buf, buf_align, ra);
+fn freeFn(ptr: *anyopaque, buf: []u8, buf_align: u8, ret_addr: usize) void {
+    const self = @ptrCast(*MeasuredAllocator, @alignCast(@alignOf(MeasuredAllocator), ptr));
+    self.parent_allocator.rawFree(buf, buf_align, ret_addr);
     self.state.current_memory_usage_bytes -= buf.len;
 }

@@ -120,7 +120,7 @@ pub fn BinaryFuse(comptime T: type) type {
             var size = keys.len();
             const reverse_order = try allocator.alloc(u64, size + 1);
             defer allocator.free(reverse_order);
-            std.mem.set(u64, reverse_order, 0);
+            @memset(reverse_order, 0);
 
             const capacity = self.fingerprints.len;
             const alone = try allocator.alloc(u32, capacity);
@@ -128,14 +128,14 @@ pub fn BinaryFuse(comptime T: type) type {
 
             const t2count = try allocator.alloc(T, capacity);
             defer allocator.free(t2count);
-            std.mem.set(T, t2count, 0);
+            @memset(t2count, 0);
 
             const reverse_h = try allocator.alloc(T, size);
             defer allocator.free(reverse_h);
 
             const t2hash = try allocator.alloc(u64, capacity);
             defer allocator.free(t2hash);
-            std.mem.set(u64, t2hash, 0);
+            @memset(t2hash, 0);
 
             var block_bits: u5 = 1;
             while ((@as(u32, 1) << block_bits) < self.segment_count) {
@@ -284,9 +284,9 @@ pub fn BinaryFuse(comptime T: type) type {
                     size = stacksize;
                     break;
                 }
-                std.mem.set(u64, reverse_order[0..size], 0);
-                std.mem.set(T, t2count[0..capacity], 0);
-                std.mem.set(u64, t2hash[0..capacity], 0);
+                @memset(reverse_order[0..size], 0);
+                @memset(t2count[0..capacity], 0);
+                @memset(t2hash[0..capacity], 0);
                 self.seed = util.rngSplitMix64(&rng_counter);
             }
             if (size == 0) return;

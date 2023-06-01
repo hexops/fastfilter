@@ -133,6 +133,11 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+### **v0.11.0**
+
+- fastfilter is now available via the Zig package manager.
+- Updated to the latest version of Zig nightly `0.11.0-dev.3332+76aa1fffb`
+
 ### **v0.10.3**
 
 - Updated to the latest version of Zig `0.11.0-dev.3332+76aa1fffb` (`build.zig` `.path` -> `.source` change.)

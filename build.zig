@@ -1,25 +1,21 @@
 const std = @import("std");
 
-pub fn build(b: *std.build.Builder) void {
-    const mode = b.standardReleaseOptions();
-    const lib = b.addStaticLibrary("xorfilter", "src/main.zig");
-    lib.setBuildMode(mode);
-    lib.install();
+pub fn build(b: *std.Build) void {
+    const optimize = b.standardOptimizeOption(.{});
+    const target = b.standardTargetOptions(.{});
 
-    var main_tests = b.addTest("src/main.zig");
-    main_tests.setBuildMode(mode);
+    _ = b.addModule("fastfilter", .{
+        .source_file = .{ .path = "src/main.zig" },
+    });
+
+    const main_tests = b.addTest(.{
+        .name = "fastfilter-tests",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_main_tests = b.addRunArtifact(main_tests);
 
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&main_tests.step);
-
-    _ = pkg;
-}
-
-pub const pkg = std.build.Pkg{
-    .name = "fastfilter",
-    .source = .{ .path = thisDir() ++ "/src/main.zig" },
-};
-
-fn thisDir() []const u8 {
-    return std.fs.path.dirname(@src().file) orelse ".";
+    test_step.dependOn(&run_main_tests.step);
 }
