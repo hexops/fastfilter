@@ -62,7 +62,7 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     // Generate keys.
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
-    for (keys) |_, i| {
+    for (keys, 0..) |_, i| {
         keys[i] = i;
     }
 

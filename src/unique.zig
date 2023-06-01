@@ -67,7 +67,7 @@ pub fn Unique(
             }
 
             var swapPos: usize = 0;
-            for (data) |v, i| {
+            for (data, 0..) |v, i| {
                 if ((!eql(ctx, v, sentinel)) and (i == (hash(ctx, v) % data.len))) {
                     swap(data, i, swapPos);
                     swapPos += 1;

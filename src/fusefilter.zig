@@ -128,7 +128,7 @@ pub fn Fuse(comptime T: type) type {
                 // TODO(upstream): the flush should be sync with the detection that follows scan values
                 // with a count of one.
                 var Qsize: usize = 0;
-                for (sets) |set, i| {
+                for (sets, 0..) |set, i| {
                     if (set.count == 1) {
                         Q[Qsize].index = @intCast(u32, i);
                         Q[Qsize].hash = sets[i].fusemask;
@@ -262,7 +262,7 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
-    for (keys) |_, i| {
+    for (keys, 0..) |_, i| {
         keys[i] = i;
     }
 

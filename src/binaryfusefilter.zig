@@ -405,12 +405,12 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     if (size == special_size_duplicates) {
         const duplicate_keys: [6]u64 = .{ 303, 1, 77, 31, 241, 303 };
         keys = try allocator.alloc(u64, duplicate_keys.len);
-        for (keys) |_, i| {
+        for (keys, 0..) |_, i| {
             keys[i] = duplicate_keys[i];
         }
     } else {
         keys = try allocator.alloc(u64, size);
-        for (keys) |_, i| {
+        for (keys, 0..) |_, i| {
             keys[i] = i;
         }
     }

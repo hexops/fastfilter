@@ -342,7 +342,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
-    for (keys) |_, i| {
+    for (keys, 0..) |_, i| {
         keys[i] = i;
     }
 
