@@ -27,27 +27,40 @@ Decide if xor or binary fuse filters fit your use case better: [should I use bin
 
 Get your keys into `u64` values. If you have strings, structs, etc. then use something like Zig's [`std.hash_map.getAutoHashFn`](https://ziglang.org/documentation/master/std/#std;hash_map.getAutoHashFn) to convert your keys to `u64` first. ("It is not important to have a good hash function, but collisions should be unlikely (~1/2^64).")
 
-In a `libs` directory of your project:
+Create a `build.zig.zon` file in your project (replace `$LATEST_COMMIT` with the latest commit hash):
 
 ```
-git clone https://github.com/hexops/fastfilter
-```
-
-In your `build.zig`:
-
-```zig
-const fastfilter = @import("libs/fastfilter/build.zig");
-
-pub fn build(b: *Builder) void {
-    ...
-    exe.addPackage(fastfilter.pkg);
+.{
+    .name = "mypkg",
+    .version = "0.1.0",
+    .dependencies = .{
+        .fastfilter = .{
+            .url = "https://github.com/hexops/fastfilter/archive/$LATEST_COMMIT.tar.gz",
+        },
+    },
 }
 ```
 
-Here is a complete example of how to use the library:
+Run `zig build` in your project, and the compiler instruct you to add a `.hash = "..."` field next to `.url`.
+
+Then use the dependency in your `build.zig`:
 
 ```zig
-const fastfilter = @import("fastfilter")
+pub fn build(b: *std.Build) void {
+    ...
+    exe.addModule("fastfilter", b.dependency("fastfilter", .{
+        .target = target,
+        .optimize = optimize,
+    }).module("fastfilter"));
+}
+```
+
+In your `main.zig`, make use of the library:
+
+```zig
+const std = @import("std");
+const testing = std.testing;
+const fastfilter = @import("fastfilter");
 
 test "mytest" {
     const allocator = std.heap.page_allocator;
@@ -60,7 +73,8 @@ test "mytest" {
     // Generate some consecutive keys.
     var keys = try allocator.alloc(u64, size);
     defer allocator.free(keys);
-    for (keys) |key, i| {
+    for (keys, 0..) |key, i| {
+        _ = key;
         keys[i] = i;
     }
 
@@ -69,7 +83,7 @@ test "mytest" {
     try filter.populate(allocator, keys[0..]);
 
     // Now we can quickly test for containment. So fast!
-    testing.expect(filter.contain(1) == true);
+    try testing.expect(filter.contain(1) == true);
 }
 ```
 
