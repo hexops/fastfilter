@@ -59,7 +59,7 @@ pub fn BinaryFuse(comptime T: type) type {
             }
             const segment_length_mask = segment_length - 1;
             const size_factor: f64 = if (size == 0) 4 else calculateSizeFactor(arity, size);
-            const capacity = if (size <= 1) 0 else @floatToInt(u32, @round(@intToFloat(f64, size) * size_factor));
+            const capacity = if (size <= 1) 0 else @intFromFloat(u32, @round(@floatFromInt(f64, size) * size_factor));
             const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length -% (arity - 1);
             var slice_length = (init_segment_count +% arity - 1) * segment_length;
             var segment_count = (slice_length + segment_length - 1) / segment_length;
@@ -361,10 +361,10 @@ inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
     // the construction time.
     if (size == 0) return 4;
     if (arity == 3) {
-        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
+        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @floatFromInt(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     } else if (arity == 4) {
-        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @intToFloat(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
+        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @floatFromInt(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
         return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
     }
     return 65536;
@@ -374,7 +374,7 @@ inline fn relaxedFloatToInt(comptime DestType: type, float: anytype) DestType {
     if (math.isInf(float) or math.isNegativeInf(float) or math.isNan(float)) {
         return 1 << @bitSizeOf(DestType) - 1;
     }
-    return @floatToInt(DestType, float);
+    return @intFromFloat(DestType, float);
 }
 
 inline fn max(a: f64, b: f64) f64 {
@@ -383,9 +383,9 @@ inline fn max(a: f64, b: f64) f64 {
 
 inline fn calculateSizeFactor(arity: u32, size: usize) f64 {
     if (arity == 3) {
-        return max(1.125, 0.875 + 0.25 * math.log(f64, math.e, 1000000.0) / math.log(f64, math.e, @intToFloat(f64, size)));
+        return max(1.125, 0.875 + 0.25 * math.log(f64, math.e, 1000000.0) / math.log(f64, math.e, @floatFromInt(f64, size)));
     } else if (arity == 4) {
-        return max(1.075, 0.77 + 0.305 * math.log(f64, math.e, 600000.0) / math.log(f64, math.e, @intToFloat(f64, size)));
+        return max(1.075, 0.77 + 0.305 * math.log(f64, math.e, 600000.0) / math.log(f64, math.e, @floatFromInt(f64, size)));
     }
     return 2.0;
 }
@@ -452,8 +452,8 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
         }
     }
 
-    std.debug.print("fpp {d:3.10} (estimated) \n", .{@intToFloat(f64, random_matches) * 1.0 / trials});
-    std.debug.print("bits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
+    // std.debug.print("fpp {d:3.10} (estimated) \n", .{@floatFromInt(f64, random_matches) * 1.0 / trials});
+    // std.debug.print("bits per entry {d:3.1}\n", .{@floatFromInt(f64, filter.sizeInBytes()) * 8.0 / @floatFromInt(f64, size)});
 }
 
 test "binaryFuse8_small_input_edge_cases" {

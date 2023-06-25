@@ -7,20 +7,20 @@ const xorfilter = @import("main.zig");
 const MeasuredAllocator = @import("MeasuredAllocator.zig");
 
 fn formatTime(writer: anytype, comptime spec: []const u8, start: u64, end: u64, division: usize) !void {
-    const ns = @intToFloat(f64, (end - start) / division);
+    const ns = @floatFromInt(f64, (end - start) / division);
     if (ns <= time.ns_per_ms) {
         try std.fmt.format(writer, spec, .{ ns, "ns " });
         return;
     }
     if (ns <= time.ns_per_s) {
-        try std.fmt.format(writer, spec, .{ ns / @intToFloat(f64, time.ns_per_ms), "ms " });
+        try std.fmt.format(writer, spec, .{ ns / @floatFromInt(f64, time.ns_per_ms), "ms " });
         return;
     }
     if (ns <= time.ns_per_min) {
-        try std.fmt.format(writer, spec, .{ ns / @intToFloat(f64, time.ns_per_s), "s  " });
+        try std.fmt.format(writer, spec, .{ ns / @floatFromInt(f64, time.ns_per_s), "s  " });
         return;
     }
-    try std.fmt.format(writer, spec, .{ ns / @intToFloat(f64, time.ns_per_min), "min" });
+    try std.fmt.format(writer, spec, .{ ns / @floatFromInt(f64, time.ns_per_min), "min" });
     return;
 }
 
@@ -89,10 +89,10 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     }
     const randomMatchesTimeEnd = timer.read();
 
-    const fpp = @intToFloat(f64, random_matches) * 1.0 / @intToFloat(f64, trials);
+    const fpp = @floatFromInt(f64, random_matches) * 1.0 / @floatFromInt(f64, trials);
 
-    const bitsPerEntry = @intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size);
-    const filterBitsPerEntry = @intToFloat(f64, filterMA.state.peak_memory_usage_bytes) * 8.0 / @intToFloat(f64, size);
+    const bitsPerEntry = @floatFromInt(f64, filter.sizeInBytes()) * 8.0 / @floatFromInt(f64, size);
+    const filterBitsPerEntry = @floatFromInt(f64, filterMA.state.peak_memory_usage_bytes) * 8.0 / @floatFromInt(f64, size);
     if (!std.math.approxEqAbs(f64, filterBitsPerEntry, bitsPerEntry, 0.001)) {
         @panic("sizeInBytes reporting wrong numbers?");
     }

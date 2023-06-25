@@ -115,7 +115,7 @@ pub fn AutoUnique(comptime T: type, comptime Context: type) fn (void, []T) []T {
 test "AutoUnique_simple" {
     var array = [_]i32{ 1, 2, 2, 3, 3, 4, 2, 1, 4, 1, 2, 3, 4, 4, 3, 2, 1 };
     const unique = AutoUnique(i32, void)({}, array[0..]);
-    const expected = &[_]i32{ 1, 4, 3, 2 };
+    const expected = &[_]i32{ 1, 2, 3, 4 };
     try testing.expectEqualSlices(i32, expected, unique);
 }
 

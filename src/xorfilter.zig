@@ -37,7 +37,7 @@ pub fn Xor(comptime T: type) type {
         ///
         /// `deinit()` must be called by the caller to free the memory.
         pub fn init(allocator: Allocator, size: usize) !Self {
-            var capacity = @floatToInt(usize, 32 + 1.23 * @intToFloat(f64, size));
+            var capacity = @intFromFloat(usize, 32 + 1.23 * @floatFromInt(f64, size));
             capacity = capacity / 3 * 3;
             return Self{
                 .seed = 0,
@@ -371,10 +371,10 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
         }
     }
 
-    const fpp = @intToFloat(f64, random_matches) * 1.0 / trials;
-    std.debug.print("fpp {d:3.10} (estimated)\n", .{fpp});
-    std.debug.print("\t(keys={}, random_matches={}, trials={})\n", .{ size, random_matches, trials });
-    std.debug.print("\tbits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
+    // const fpp = @floatFromInt(f64, random_matches) * 1.0 / trials;
+    // std.debug.print("fpp {d:3.10} (estimated)\n", .{fpp});
+    // std.debug.print("\t(keys={}, random_matches={}, trials={})\n", .{ size, random_matches, trials });
+    // std.debug.print("\tbits per entry {d:3.1}\n", .{@floatFromInt(f64, filter.sizeInBytes()) * 8.0 / @floatFromInt(f64, size)});
 }
 
 test "xor8" {

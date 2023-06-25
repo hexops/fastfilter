@@ -39,7 +39,7 @@ pub fn Fuse(comptime T: type) type {
         ///
         /// `deinit()` must be called by the caller to free the memory.
         pub fn init(allocator: Allocator, size: usize) !Self {
-            var capacity = @floatToInt(usize, (1.0 / 0.879) * @intToFloat(f64, size));
+            var capacity = @intFromFloat(usize, (1.0 / 0.879) * @floatFromInt(f64, size));
             capacity = capacity / FUSE_SLOTS * FUSE_SLOTS;
             return Self{
                 .seed = 0,
@@ -291,8 +291,8 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
         }
     }
 
-    std.debug.print("fpp {d:3.10} (estimated) \n", .{@intToFloat(f64, random_matches) * 1.0 / trials});
-    std.debug.print("bits per entry {d:3.1}\n", .{@intToFloat(f64, filter.sizeInBytes()) * 8.0 / @intToFloat(f64, size)});
+    // std.debug.print("fpp {d:3.10} (estimated) \n", .{@floatFromInt(f64, random_matches) * 1.0 / trials});
+    // std.debug.print("bits per entry {d:3.1}\n", .{@floatFromInt(f64, filter.sizeInBytes()) * 8.0 / @floatFromInt(f64, size)});
 }
 
 test "fuse4" {
