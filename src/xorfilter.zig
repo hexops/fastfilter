@@ -37,7 +37,7 @@ pub fn Xor(comptime T: type) type {
         ///
         /// `deinit()` must be called by the caller to free the memory.
         pub fn init(allocator: Allocator, size: usize) !Self {
-            var capacity = @intFromFloat(usize, 32 + 1.23 * @floatFromInt(f64, size));
+            var capacity = @as(usize, @intFromFloat(32 + 1.23 * @as(f64, @floatFromInt(size))));
             capacity = capacity / 3 * 3;
             return Self{
                 .seed = 0,
@@ -53,11 +53,11 @@ pub fn Xor(comptime T: type) type {
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *const Self, key: u64) bool {
             var hash = util.mixSplit(key, self.seed);
-            var f = @truncate(T, util.fingerprint(hash));
-            var r0 = @truncate(u32, hash);
-            var r1 = @truncate(u32, util.rotl64(hash, 21));
-            var r2 = @truncate(u32, util.rotl64(hash, 42));
-            var bl = @truncate(u32, self.blockLength);
+            var f = @as(T, @truncate(util.fingerprint(hash)));
+            var r0 = @as(u32, @truncate(hash));
+            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            var bl = @as(u32, @truncate(self.blockLength));
             var h0: u32 = util.reduce(r0, bl);
             var h1: u32 = util.reduce(r1, bl) + bl;
             var h2: u32 = util.reduce(r2, bl) + 2 * bl;
@@ -137,7 +137,7 @@ pub fn Xor(comptime T: type) type {
                     var i: usize = 0;
                     while (i < self.blockLength) : (i += 1) {
                         if (sets0[i].count == 1) {
-                            Q0[Q0size].index = @intCast(u32, i);
+                            Q0[Q0size].index = @as(u32, @intCast(i));
                             Q0[Q0size].hash = sets0[i].xormask;
                             Q0size += 1;
                         }
@@ -147,7 +147,7 @@ pub fn Xor(comptime T: type) type {
                     var i: usize = 0;
                     while (i < self.blockLength) : (i += 1) {
                         if (sets1[i].count == 1) {
-                            Q1[Q1size].index = @intCast(u32, i);
+                            Q1[Q1size].index = @as(u32, @intCast(i));
                             Q1[Q1size].hash = sets1[i].xormask;
                             Q1size += 1;
                         }
@@ -157,7 +157,7 @@ pub fn Xor(comptime T: type) type {
                     var i: usize = 0;
                     while (i < self.blockLength) : (i += 1) {
                         if (sets2[i].count == 1) {
-                            Q2[Q2size].index = @intCast(u32, i);
+                            Q2[Q2size].index = @as(u32, @intCast(i));
                             Q2[Q2size].hash = sets2[i].xormask;
                             Q2size += 1;
                         }
@@ -204,7 +204,7 @@ pub fn Xor(comptime T: type) type {
                         var hash = keyindex.hash;
                         var h0 = self.getH0(hash);
                         var h2 = self.getH2(hash);
-                        keyindex.index += @truncate(u32, self.blockLength);
+                        keyindex.index += @as(u32, @truncate(self.blockLength));
 
                         stack[stack_size] = keyindex;
                         stack_size += 1;
@@ -233,7 +233,7 @@ pub fn Xor(comptime T: type) type {
                         var hash = keyindex.hash;
                         var h0 = self.getH0(hash);
                         var h1 = self.getH1(hash);
-                        keyindex.index += @truncate(u32, 2 * @intCast(u64, self.blockLength));
+                        keyindex.index += @as(u32, @truncate(2 * @as(u64, @intCast(self.blockLength))));
 
                         stack[stack_size] = keyindex;
                         stack_size += 1;
@@ -269,44 +269,44 @@ pub fn Xor(comptime T: type) type {
                 stack_size -= 1;
                 var ki = stack[stack_size];
                 var val: u64 = util.fingerprint(ki.hash);
-                if (ki.index < @truncate(u32, self.blockLength)) {
+                if (ki.index < @as(u32, @truncate(self.blockLength))) {
                     val ^= fingerprints1[self.getH1(ki.hash)] ^ fingerprints2[self.getH2(ki.hash)];
-                } else if (ki.index < 2 * @truncate(u32, self.blockLength)) {
+                } else if (ki.index < 2 * @as(u32, @truncate(self.blockLength))) {
                     val ^= fingerprints0[self.getH0(ki.hash)] ^ fingerprints2[self.getH2(ki.hash)];
                 } else {
                     val ^= fingerprints0[self.getH0(ki.hash)] ^ fingerprints1[self.getH1(ki.hash)];
                 }
-                self.fingerprints[ki.index] = @truncate(T, val);
+                self.fingerprints[ki.index] = @as(T, @truncate(val));
             }
             return;
         }
 
         inline fn getH0H1H2(self: *Self, k: u64) Hashes {
             var hash = util.mixSplit(k, self.seed);
-            var r0 = @truncate(u32, hash);
-            var r1 = @truncate(u32, util.rotl64(hash, 21));
-            var r2 = @truncate(u32, util.rotl64(hash, 42));
+            var r0 = @as(u32, @truncate(hash));
+            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
             return Hashes{
                 .h = hash,
-                .h0 = util.reduce(r0, @truncate(u32, self.blockLength)),
-                .h1 = util.reduce(r1, @truncate(u32, self.blockLength)),
-                .h2 = util.reduce(r2, @truncate(u32, self.blockLength)),
+                .h0 = util.reduce(r0, @as(u32, @truncate(self.blockLength))),
+                .h1 = util.reduce(r1, @as(u32, @truncate(self.blockLength))),
+                .h2 = util.reduce(r2, @as(u32, @truncate(self.blockLength))),
             };
         }
 
         inline fn getH0(self: *Self, hash: u64) u32 {
-            var r0 = @truncate(u32, hash);
-            return util.reduce(r0, @truncate(u32, self.blockLength));
+            var r0 = @as(u32, @truncate(hash));
+            return util.reduce(r0, @as(u32, @truncate(self.blockLength)));
         }
 
         inline fn getH1(self: *Self, hash: u64) u32 {
-            var r1 = @truncate(u32, util.rotl64(hash, 21));
-            return util.reduce(r1, @truncate(u32, self.blockLength));
+            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            return util.reduce(r1, @as(u32, @truncate(self.blockLength)));
         }
 
         inline fn getH2(self: *Self, hash: u64) u32 {
-            var r2 = @truncate(u32, util.rotl64(hash, 42));
-            return util.reduce(r2, @truncate(u32, self.blockLength));
+            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            return util.reduce(r2, @as(u32, @truncate(self.blockLength)));
         }
     };
 }

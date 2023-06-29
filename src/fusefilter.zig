@@ -39,7 +39,7 @@ pub fn Fuse(comptime T: type) type {
         ///
         /// `deinit()` must be called by the caller to free the memory.
         pub fn init(allocator: Allocator, size: usize) !Self {
-            var capacity = @intFromFloat(usize, (1.0 / 0.879) * @floatFromInt(f64, size));
+            var capacity = @as(usize, @intFromFloat((1.0 / 0.879) * @as(f64, @floatFromInt(size))));
             capacity = capacity / FUSE_SLOTS * FUSE_SLOTS;
             return Self{
                 .seed = 0,
@@ -55,16 +55,16 @@ pub fn Fuse(comptime T: type) type {
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *const Self, key: u64) bool {
             var hash = util.mixSplit(key, self.seed);
-            var f = @truncate(T, util.fingerprint(hash));
-            var r0 = @truncate(u32, hash);
-            var r1 = @truncate(u32, util.rotl64(hash, 21));
-            var r2 = @truncate(u32, util.rotl64(hash, 42));
-            var r3 = @truncate(u32, (0xBF58476D1CE4E5B9 *% hash) >> 32);
+            var f = @as(T, @truncate(util.fingerprint(hash)));
+            var r0 = @as(u32, @truncate(hash));
+            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            var r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
             var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
             var sl: u64 = self.segmentLength;
-            var h0 = (seg + 0) * sl + util.reduce(r1, @truncate(u32, sl));
-            var h1 = (seg + 1) * sl + util.reduce(r2, @truncate(u32, sl));
-            var h2 = (seg + 2) * sl + util.reduce(r3, @truncate(u32, sl));
+            var h0 = (seg + 0) * sl + util.reduce(r1, @as(u32, @truncate(sl)));
+            var h1 = (seg + 1) * sl + util.reduce(r2, @as(u32, @truncate(sl)));
+            var h2 = (seg + 2) * sl + util.reduce(r3, @as(u32, @truncate(sl)));
             return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
         }
 
@@ -130,7 +130,7 @@ pub fn Fuse(comptime T: type) type {
                 var Qsize: usize = 0;
                 for (sets, 0..) |set, i| {
                     if (set.count == 1) {
-                        Q[Qsize].index = @intCast(u32, i);
+                        Q[Qsize].index = @as(u32, @intCast(i));
                         Q[Qsize].hash = sets[i].fusemask;
                         Qsize += 1;
                     }
@@ -186,7 +186,7 @@ pub fn Fuse(comptime T: type) type {
                 stack_size -= 1;
                 var ki = stack[stack_size];
                 var hs = getJustH0H1H2(self, ki.hash);
-                var hsh: T = @truncate(T, util.fingerprint(ki.hash));
+                var hsh: T = @as(T, @truncate(util.fingerprint(ki.hash)));
                 if (ki.index == hs.h0) {
                     hsh ^= self.fingerprints[hs.h1] ^ self.fingerprints[hs.h2];
                 } else if (ki.index == hs.h1) {
@@ -201,31 +201,31 @@ pub fn Fuse(comptime T: type) type {
 
         inline fn getH0H1H2(self: *Self, k: u64) Hashes {
             var hash = util.mixSplit(k, self.seed);
-            var r0 = @truncate(u32, hash);
-            var r1 = @truncate(u32, util.rotl64(hash, 21));
-            var r2 = @truncate(u32, util.rotl64(hash, 42));
-            var r3 = @truncate(u32, (0xBF58476D1CE4E5B9 *% hash) >> 32);
+            var r0 = @as(u32, @truncate(hash));
+            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            var r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
             var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
             var sl = self.segmentLength;
             return Hashes{
                 .h = hash,
-                .h0 = @truncate(u32, @intCast(u64, (seg + 0)) * sl + @intCast(u64, util.reduce(r1, @truncate(u32, sl)))),
-                .h1 = @truncate(u32, @intCast(u64, (seg + 1)) * sl + @intCast(u64, util.reduce(r2, @truncate(u32, sl)))),
-                .h2 = @truncate(u32, @intCast(u64, (seg + 2)) * sl + @intCast(u64, util.reduce(r3, @truncate(u32, sl)))),
+                .h0 = @as(u32, @truncate(@as(u64, @intCast((seg + 0))) * sl + @as(u64, @intCast(util.reduce(r1, @as(u32, @truncate(sl))))))),
+                .h1 = @as(u32, @truncate(@as(u64, @intCast((seg + 1))) * sl + @as(u64, @intCast(util.reduce(r2, @as(u32, @truncate(sl))))))),
+                .h2 = @as(u32, @truncate(@as(u64, @intCast((seg + 2))) * sl + @as(u64, @intCast(util.reduce(r3, @as(u32, @truncate(sl))))))),
             };
         }
 
         inline fn getJustH0H1H2(self: *Self, hash: u64) H0h1h2 {
-            var r0 = @truncate(u32, hash);
-            var r1 = @truncate(u32, util.rotl64(hash, 21));
-            var r2 = @truncate(u32, util.rotl64(hash, 42));
-            var r3 = @truncate(u32, (0xBF58476D1CE4E5B9 *% hash) >> 32);
+            var r0 = @as(u32, @truncate(hash));
+            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            var r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
             var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
             var sl = self.segmentLength;
             return H0h1h2{
-                .h0 = @truncate(u32, @intCast(u64, (seg + 0)) * sl + @intCast(u64, util.reduce(r1, @truncate(u32, sl)))),
-                .h1 = @truncate(u32, @intCast(u64, (seg + 1)) * sl + @intCast(u64, util.reduce(r2, @truncate(u32, sl)))),
-                .h2 = @truncate(u32, @intCast(u64, (seg + 2)) * sl + @intCast(u64, util.reduce(r3, @truncate(u32, sl)))),
+                .h0 = @as(u32, @truncate(@as(u64, @intCast((seg + 0))) * sl + @as(u64, @intCast(util.reduce(r1, @as(u32, @truncate(sl))))))),
+                .h1 = @as(u32, @truncate(@as(u64, @intCast((seg + 1))) * sl + @as(u64, @intCast(util.reduce(r2, @as(u32, @truncate(sl))))))),
+                .h2 = @as(u32, @truncate(@as(u64, @intCast((seg + 2))) * sl + @as(u64, @intCast(util.reduce(r3, @as(u32, @truncate(sl))))))),
             };
         }
     };

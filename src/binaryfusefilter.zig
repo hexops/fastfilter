@@ -59,7 +59,7 @@ pub fn BinaryFuse(comptime T: type) type {
             }
             const segment_length_mask = segment_length - 1;
             const size_factor: f64 = if (size == 0) 4 else calculateSizeFactor(arity, size);
-            const capacity = if (size <= 1) 0 else @intFromFloat(u32, @round(@floatFromInt(f64, size) * size_factor));
+            const capacity = if (size <= 1) 0 else @as(u32, @intFromFloat(@round(@as(f64, @floatFromInt(size)) * size_factor)));
             const init_segment_count: u32 = (capacity + segment_length - 1) / segment_length -% (arity - 1);
             var slice_length = (init_segment_count +% arity - 1) * segment_length;
             var segment_count = (slice_length + segment_length - 1) / segment_length;
@@ -163,7 +163,7 @@ pub fn BinaryFuse(comptime T: type) type {
                 while (i < block) : (i += 1) {
                     // important : i * size would overflow as a 32-bit number in some
                     // cases.
-                    start_pos[i] = @truncate(u32, (@intCast(u64, i) * size) >> block_bits);
+                    start_pos[i] = @as(u32, @truncate((@as(u64, @intCast(i)) * size) >> block_bits));
                 }
 
                 const mask_block: u64 = block - 1;
@@ -174,7 +174,7 @@ pub fn BinaryFuse(comptime T: type) type {
                     const hash: u64 = util.murmur64(sum);
 
                     const shift_count = @as(usize, 64) - @as(usize, block_bits);
-                    var segment_index: u64 = if (shift_count >= 63) 0 else hash >> @truncate(u6, shift_count);
+                    var segment_index: u64 = if (shift_count >= 63) 0 else hash >> @as(u6, @truncate(shift_count));
                     while (reverse_order[start_pos[segment_index]] != 0) {
                         segment_index += 1;
                         segment_index &= mask_block;
@@ -291,11 +291,11 @@ pub fn BinaryFuse(comptime T: type) type {
             }
             if (size == 0) return;
 
-            var i: u32 = @truncate(u32, size - 1);
+            var i: u32 = @as(u32, @truncate(size - 1));
             while (i < size) : (i -%= 1) {
                 // the hash of the key we insert next
                 const hash: u64 = reverse_order[i];
-                const xor2: T = @truncate(T, util.fingerprint(hash));
+                const xor2: T = @as(T, @truncate(util.fingerprint(hash)));
                 const found: T = reverse_h[i];
                 h012[0] = self.fuseHash(0, hash);
                 h012[1] = self.fuseHash(1, hash);
@@ -309,7 +309,7 @@ pub fn BinaryFuse(comptime T: type) type {
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *const Self, key: u64) bool {
             var hash = util.mixSplit(key, self.seed);
-            var f = @truncate(T, util.fingerprint(hash));
+            var f = @as(T, @truncate(util.fingerprint(hash)));
             const hashes = self.fuseHashBatch(hash);
             f ^= self.fingerprints[hashes.h0] ^ self.fingerprints[hashes.h1] ^ self.fingerprints[hashes.h2];
             return f == 0;
@@ -318,11 +318,11 @@ pub fn BinaryFuse(comptime T: type) type {
         inline fn fuseHashBatch(self: *const Self, hash: u64) Hashes {
             const hi: u64 = mulhi(hash, self.segment_count_length);
             var ans: Hashes = undefined;
-            ans.h0 = @truncate(u32, hi);
+            ans.h0 = @as(u32, @truncate(hi));
             ans.h1 = ans.h0 + self.segment_length;
             ans.h2 = ans.h1 + self.segment_length;
-            ans.h1 ^= @truncate(u32, hash >> 18) & self.segment_length_mask;
-            ans.h2 ^= @truncate(u32, hash) & self.segment_length_mask;
+            ans.h1 ^= @as(u32, @truncate(hash >> 18)) & self.segment_length_mask;
+            ans.h2 ^= @as(u32, @truncate(hash)) & self.segment_length_mask;
             return ans;
         }
 
@@ -339,15 +339,15 @@ pub fn BinaryFuse(comptime T: type) type {
             if (shift_count >= 63) {
                 h ^= 0 & self.segment_length_mask;
             } else {
-                h ^= (hh >> @truncate(u6, shift_count)) & self.segment_length_mask;
+                h ^= (hh >> @as(u6, @truncate(shift_count))) & self.segment_length_mask;
             }
-            return @truncate(u32, h);
+            return @as(u32, @truncate(h));
         }
     };
 }
 
 inline fn mulhi(a: u64, b: u64) u64 {
-    return @truncate(u64, (@intCast(u128, a) *% @intCast(u128, b)) >> 64);
+    return @as(u64, @truncate((@as(u128, @intCast(a)) *% @as(u128, @intCast(b))) >> 64));
 }
 
 const Hashes = struct {
@@ -361,11 +361,11 @@ inline fn calculateSegmentLength(arity: u32, size: usize) u32 {
     // the construction time.
     if (size == 0) return 4;
     if (arity == 3) {
-        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @floatFromInt(f64, size)) / math.log(f64, math.e, 3.33) + 2.25)));
-        return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
+        const shift_count = @as(u32, @truncate(relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @as(f64, @floatFromInt(size))) / math.log(f64, math.e, 3.33) + 2.25))));
+        return if (shift_count >= 31) 0 else @as(u32, 1) << @as(u5, @truncate(shift_count));
     } else if (arity == 4) {
-        const shift_count = @truncate(u32, relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @floatFromInt(f64, size)) / math.log(f64, math.e, 2.91) - 0.5)));
-        return if (shift_count >= 31) 0 else @as(u32, 1) << @truncate(u5, shift_count);
+        const shift_count = @as(u32, @truncate(relaxedFloatToInt(usize, @floor(math.log(f64, math.e, @as(f64, @floatFromInt(size))) / math.log(f64, math.e, 2.91) - 0.5))));
+        return if (shift_count >= 31) 0 else @as(u32, 1) << @as(u5, @truncate(shift_count));
     }
     return 65536;
 }
@@ -374,7 +374,7 @@ inline fn relaxedFloatToInt(comptime DestType: type, float: anytype) DestType {
     if (math.isInf(float) or math.isNegativeInf(float) or math.isNan(float)) {
         return 1 << @bitSizeOf(DestType) - 1;
     }
-    return @intFromFloat(DestType, float);
+    return @as(DestType, @intFromFloat(float));
 }
 
 inline fn max(a: f64, b: f64) f64 {
@@ -383,9 +383,9 @@ inline fn max(a: f64, b: f64) f64 {
 
 inline fn calculateSizeFactor(arity: u32, size: usize) f64 {
     if (arity == 3) {
-        return max(1.125, 0.875 + 0.25 * math.log(f64, math.e, 1000000.0) / math.log(f64, math.e, @floatFromInt(f64, size)));
+        return max(1.125, 0.875 + 0.25 * math.log(f64, math.e, 1000000.0) / math.log(f64, math.e, @as(f64, @floatFromInt(size))));
     } else if (arity == 4) {
-        return max(1.075, 0.77 + 0.305 * math.log(f64, math.e, 600000.0) / math.log(f64, math.e, @floatFromInt(f64, size)));
+        return max(1.075, 0.77 + 0.305 * math.log(f64, math.e, 600000.0) / math.log(f64, math.e, @as(f64, @floatFromInt(size))));
     }
     return 2.0;
 }

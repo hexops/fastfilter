@@ -22,12 +22,12 @@ pub inline fn mixSplit(key: u64, seed: u64) u64 {
 }
 
 pub inline fn rotl64(n: u64, c: usize) u64 {
-    return (n << @intCast(u6, c & 63)) | (n >> @intCast(u6, (-%c) & 63));
+    return (n << @as(u6, @intCast(c & 63))) | (n >> @as(u6, @intCast((-%c) & 63)));
 }
 
 pub inline fn reduce(hash: u32, n: u32) u32 {
     // http://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction
-    return @truncate(u32, (@intCast(u64, hash) *% @intCast(u64, n)) >> 32);
+    return @as(u32, @truncate((@as(u64, @intCast(hash)) *% @as(u64, @intCast(n))) >> 32));
 }
 
 pub inline fn fingerprint(hash: u64) u64 {
