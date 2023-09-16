@@ -150,11 +150,11 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 ### **v0.11.0**
 
 - fastfilter is now available via the Zig package manager.
-- Updated to the latest version of Zig nightly `0.11.0-dev.4410+76f7b40e1`
+- Updated to the latest version of Zig nightly `0.12.0-dev.389+61b70778b`
 
 ### **v0.10.3**
 
-- Updated to the latest version of Zig `0.11.0-dev.4410+76f7b40e1` (`build.zig` `.path` -> `.source` change.)
+- Updated to the latest version of Zig `0.12.0-dev.389+61b70778b` (`build.zig` `.path` -> `.source` change.)
 
 ### **v0.10.2**
 
@@ -163,7 +163,7 @@ The API is generally finalized, but we may make some adjustments as Zig changes 
 
 ### **v0.10.1**
 
-- Updated to the latest version of Zig `0.11.0-dev.4410+76f7b40e1`
+- Updated to the latest version of Zig `0.12.0-dev.389+61b70778b`
 
 ### **v0.10.0**
 
@@ -218,7 +218,7 @@ zig run -O ReleaseFast src/benchmark.zig -- --xor 8 --num-keys 1000000
 
 * CPU: 2.3 GHz 8-Core Intel Core i9
 * Memory: 16 GB 2667 MHz DDR4
-* Zig version: `0.11.0-dev.4410+76f7b40e1`
+* Zig version: `0.12.0-dev.389+61b70778b`
 
 | Algorithm    | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |
 |--------------|------------|------------|-------------|--------------|----------------|---------------|--------------|
@@ -265,7 +265,7 @@ Legend:
 
 * CPU: 3.79Ghz AMD Ryzen 9 3900X
 * Memory: 32 GB 2133 MHz DDR4
-* Zig version: `0.11.0-dev.4410+76f7b40e1`
+* Zig version: `0.12.0-dev.389+61b70778b`
 
 | Algorithm    | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |
 |--------------|------------|------------|-------------|--------------|----------------|---------------|--------------|
