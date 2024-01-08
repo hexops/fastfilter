@@ -47,10 +47,10 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     const allocator = std.heap.page_allocator;
 
     var filterMA = MeasuredAllocator.init(allocator);
-    var filterAllocator = filterMA.allocator();
+    const filterAllocator = filterMA.allocator();
 
     var buildMA = MeasuredAllocator.init(allocator);
-    var buildAllocator = buildMA.allocator();
+    const buildAllocator = buildMA.allocator();
 
     const stdout = std.io.getStdOut().writer();
     var timer = try Timer.start();
@@ -80,7 +80,7 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     timer.reset();
     const randomMatchesTimeStart = timer.lap();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
+        const random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;

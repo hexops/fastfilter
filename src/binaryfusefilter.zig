@@ -308,7 +308,7 @@ pub fn BinaryFuse(comptime T: type) type {
 
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *const Self, key: u64) bool {
-            var hash = util.mixSplit(key, self.seed);
+            const hash = util.mixSplit(key, self.seed);
             var f = @as(T, @truncate(util.fingerprint(hash)));
             const hashes = self.fuseHashBatch(hash);
             f ^= self.fingerprints[hashes.h0] ^ self.fingerprints[hashes.h1] ^ self.fingerprints[hashes.h2];
@@ -444,7 +444,7 @@ fn binaryFuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     var rng = std.rand.DefaultPrng.init(0);
     const random = rng.random();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
+        const random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;
