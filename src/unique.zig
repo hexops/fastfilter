@@ -17,7 +17,7 @@ pub fn Unique(
         }
 
         fn swap(data: []T, i: usize, j: usize) void {
-            var tmp = data[i];
+            const tmp = data[i];
             data[i] = data[j];
             data[j] = tmp;
         }

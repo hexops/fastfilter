@@ -54,17 +54,17 @@ pub fn Fuse(comptime T: type) type {
 
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *const Self, key: u64) bool {
-            var hash = util.mixSplit(key, self.seed);
-            var f = @as(T, @truncate(util.fingerprint(hash)));
-            var r0 = @as(u32, @truncate(hash));
-            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
-            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
-            var r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
-            var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
-            var sl: u64 = self.segmentLength;
-            var h0 = (seg + 0) * sl + util.reduce(r1, @as(u32, @truncate(sl)));
-            var h1 = (seg + 1) * sl + util.reduce(r2, @as(u32, @truncate(sl)));
-            var h2 = (seg + 2) * sl + util.reduce(r3, @as(u32, @truncate(sl)));
+            const hash = util.mixSplit(key, self.seed);
+            const f = @as(T, @truncate(util.fingerprint(hash)));
+            const r0 = @as(u32, @truncate(hash));
+            const r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            const r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            const r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
+            const seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
+            const sl: u64 = self.segmentLength;
+            const h0 = (seg + 0) * sl + util.reduce(r1, @as(u32, @truncate(sl)));
+            const h1 = (seg + 1) * sl + util.reduce(r2, @as(u32, @truncate(sl)));
+            const h2 = (seg + 2) * sl + util.reduce(r3, @as(u32, @truncate(sl)));
             return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
         }
 
@@ -116,7 +116,7 @@ pub fn Fuse(comptime T: type) type {
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
                 while (keys.next()) |key| {
-                    var hs = getH0H1H2(self, key);
+                    const hs = getH0H1H2(self, key);
                     sets[hs.h0].fusemask ^= hs.h;
                     sets[hs.h0].count += 1;
                     sets[hs.h1].fusemask ^= hs.h;
@@ -139,13 +139,13 @@ pub fn Fuse(comptime T: type) type {
                 var stack_size: usize = 0;
                 while (Qsize > 0) {
                     Qsize -= 1;
-                    var keyindex = Q[Qsize];
-                    var index = keyindex.index;
+                    const keyindex = Q[Qsize];
+                    const index = keyindex.index;
                     if (sets[index].count == 0) {
                         continue; // not actually possible after the initial scan.
                     }
-                    var hash = keyindex.hash;
-                    var hs = getJustH0H1H2(self, hash);
+                    const hash = keyindex.hash;
+                    const hs = getJustH0H1H2(self, hash);
 
                     stack[stack_size] = keyindex;
                     stack_size += 1;
@@ -184,8 +184,8 @@ pub fn Fuse(comptime T: type) type {
             var stack_size = keys.len();
             while (stack_size > 0) {
                 stack_size -= 1;
-                var ki = stack[stack_size];
-                var hs = getJustH0H1H2(self, ki.hash);
+                const ki = stack[stack_size];
+                const hs = getJustH0H1H2(self, ki.hash);
                 var hsh: T = @as(T, @truncate(util.fingerprint(ki.hash)));
                 if (ki.index == hs.h0) {
                     hsh ^= self.fingerprints[hs.h1] ^ self.fingerprints[hs.h2];
@@ -200,13 +200,13 @@ pub fn Fuse(comptime T: type) type {
         }
 
         inline fn getH0H1H2(self: *Self, k: u64) Hashes {
-            var hash = util.mixSplit(k, self.seed);
-            var r0 = @as(u32, @truncate(hash));
-            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
-            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
-            var r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
-            var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
-            var sl = self.segmentLength;
+            const hash = util.mixSplit(k, self.seed);
+            const r0 = @as(u32, @truncate(hash));
+            const r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            const r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            const r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
+            const seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
+            const sl = self.segmentLength;
             return Hashes{
                 .h = hash,
                 .h0 = @as(u32, @truncate(@as(u64, @intCast((seg + 0))) * sl + @as(u64, @intCast(util.reduce(r1, @as(u32, @truncate(sl))))))),
@@ -216,12 +216,12 @@ pub fn Fuse(comptime T: type) type {
         }
 
         inline fn getJustH0H1H2(self: *Self, hash: u64) H0h1h2 {
-            var r0 = @as(u32, @truncate(hash));
-            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
-            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
-            var r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
-            var seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
-            var sl = self.segmentLength;
+            const r0 = @as(u32, @truncate(hash));
+            const r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            const r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            const r3 = @as(u32, @truncate((0xBF58476D1CE4E5B9 *% hash) >> 32));
+            const seg = util.reduce(r0, FUSE_SEGMENT_COUNT);
+            const sl = self.segmentLength;
             return H0h1h2{
                 .h0 = @as(u32, @truncate(@as(u64, @intCast((seg + 0))) * sl + @as(u64, @intCast(util.reduce(r1, @as(u32, @truncate(sl))))))),
                 .h1 = @as(u32, @truncate(@as(u64, @intCast((seg + 1))) * sl + @as(u64, @intCast(util.reduce(r2, @as(u32, @truncate(sl))))))),
@@ -283,7 +283,7 @@ fn fuseTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     var rng = std.rand.DefaultPrng.init(0);
     const random = rng.random();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
+        const random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;

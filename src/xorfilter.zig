@@ -52,15 +52,15 @@ pub fn Xor(comptime T: type) type {
 
         /// reports if the specified key is within the set with false-positive rate.
         pub inline fn contain(self: *const Self, key: u64) bool {
-            var hash = util.mixSplit(key, self.seed);
-            var f = @as(T, @truncate(util.fingerprint(hash)));
-            var r0 = @as(u32, @truncate(hash));
-            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
-            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
-            var bl = @as(u32, @truncate(self.blockLength));
-            var h0: u32 = util.reduce(r0, bl);
-            var h1: u32 = util.reduce(r1, bl) + bl;
-            var h2: u32 = util.reduce(r2, bl) + 2 * bl;
+            const hash = util.mixSplit(key, self.seed);
+            const f = @as(T, @truncate(util.fingerprint(hash)));
+            const r0 = @as(u32, @truncate(hash));
+            const r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            const r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            const bl = @as(u32, @truncate(self.blockLength));
+            const h0: u32 = util.reduce(r0, bl);
+            const h1: u32 = util.reduce(r1, bl) + bl;
+            const h2: u32 = util.reduce(r2, bl) + 2 * bl;
             return f == (self.fingerprints[h0] ^ self.fingerprints[h1] ^ self.fingerprints[h2]);
         }
 
@@ -119,7 +119,7 @@ pub fn Xor(comptime T: type) type {
                 for (sets[0..sets.len]) |*b| b.* = std.mem.zeroes(Set);
 
                 while (keys.next()) |key| {
-                    var hs = self.getH0H1H2(key);
+                    const hs = self.getH0H1H2(key);
                     sets0[hs.h0].xormask ^= hs.h;
                     sets0[hs.h0].count += 1;
                     sets1[hs.h1].xormask ^= hs.h;
@@ -168,14 +168,14 @@ pub fn Xor(comptime T: type) type {
                 while (Q0size + Q1size + Q2size > 0) {
                     while (Q0size > 0) {
                         Q0size -%= 1;
-                        var keyindex = Q0[Q0size];
-                        var index = keyindex.index;
+                        const keyindex = Q0[Q0size];
+                        const index = keyindex.index;
                         if (sets0[index].count == 0) {
                             continue; // not actually possible after the initial scan.
                         }
-                        var hash = keyindex.hash;
-                        var h1 = self.getH1(hash);
-                        var h2 = self.getH2(hash);
+                        const hash = keyindex.hash;
+                        const h1 = self.getH1(hash);
+                        const h2 = self.getH2(hash);
 
                         stack[stack_size] = keyindex;
                         stack_size += 1;
@@ -197,13 +197,13 @@ pub fn Xor(comptime T: type) type {
                     while (Q1size > 0) {
                         Q1size -%= 1;
                         var keyindex = Q1[Q1size];
-                        var index = keyindex.index;
+                        const index = keyindex.index;
                         if (sets1[index].count == 0) {
                             continue; // not actually possible after the initial scan.
                         }
-                        var hash = keyindex.hash;
-                        var h0 = self.getH0(hash);
-                        var h2 = self.getH2(hash);
+                        const hash = keyindex.hash;
+                        const h0 = self.getH0(hash);
+                        const h2 = self.getH2(hash);
                         keyindex.index += @as(u32, @truncate(self.blockLength));
 
                         stack[stack_size] = keyindex;
@@ -226,13 +226,13 @@ pub fn Xor(comptime T: type) type {
                     while (Q2size > 0) {
                         Q2size -%= 1;
                         var keyindex = Q2[Q2size];
-                        var index = keyindex.index;
+                        const index = keyindex.index;
                         if (sets2[index].count == 0) {
                             continue; // not actually possible after the initial scan.
                         }
-                        var hash = keyindex.hash;
-                        var h0 = self.getH0(hash);
-                        var h1 = self.getH1(hash);
+                        const hash = keyindex.hash;
+                        const h0 = self.getH0(hash);
+                        const h1 = self.getH1(hash);
                         keyindex.index += @as(u32, @truncate(2 * @as(u64, @intCast(self.blockLength))));
 
                         stack[stack_size] = keyindex;
@@ -260,14 +260,14 @@ pub fn Xor(comptime T: type) type {
                 self.seed = util.rngSplitMix64(&rng_counter);
             }
 
-            var fingerprints0: []T = self.fingerprints;
-            var fingerprints1: []T = self.fingerprints[self.blockLength..];
-            var fingerprints2: []T = self.fingerprints[2 * self.blockLength ..];
+            const fingerprints0: []T = self.fingerprints;
+            const fingerprints1: []T = self.fingerprints[self.blockLength..];
+            const fingerprints2: []T = self.fingerprints[2 * self.blockLength ..];
 
             var stack_size = keys.len();
             while (stack_size > 0) {
                 stack_size -= 1;
-                var ki = stack[stack_size];
+                const ki = stack[stack_size];
                 var val: u64 = util.fingerprint(ki.hash);
                 if (ki.index < @as(u32, @truncate(self.blockLength))) {
                     val ^= fingerprints1[self.getH1(ki.hash)] ^ fingerprints2[self.getH2(ki.hash)];
@@ -282,10 +282,10 @@ pub fn Xor(comptime T: type) type {
         }
 
         inline fn getH0H1H2(self: *Self, k: u64) Hashes {
-            var hash = util.mixSplit(k, self.seed);
-            var r0 = @as(u32, @truncate(hash));
-            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
-            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            const hash = util.mixSplit(k, self.seed);
+            const r0 = @as(u32, @truncate(hash));
+            const r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            const r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
             return Hashes{
                 .h = hash,
                 .h0 = util.reduce(r0, @as(u32, @truncate(self.blockLength))),
@@ -295,17 +295,17 @@ pub fn Xor(comptime T: type) type {
         }
 
         inline fn getH0(self: *Self, hash: u64) u32 {
-            var r0 = @as(u32, @truncate(hash));
+            const r0 = @as(u32, @truncate(hash));
             return util.reduce(r0, @as(u32, @truncate(self.blockLength)));
         }
 
         inline fn getH1(self: *Self, hash: u64) u32 {
-            var r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
+            const r1 = @as(u32, @truncate(util.rotl64(hash, 21)));
             return util.reduce(r1, @as(u32, @truncate(self.blockLength)));
         }
 
         inline fn getH2(self: *Self, hash: u64) u32 {
-            var r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
+            const r2 = @as(u32, @truncate(util.rotl64(hash, 42)));
             return util.reduce(r2, @as(u32, @truncate(self.blockLength)));
         }
     };
@@ -363,7 +363,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     var rng = std.rand.DefaultPrng.init(0);
     const random = rng.random();
     while (i < trials) : (i += 1) {
-        var random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
+        const random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
         if (filter.contain(random_key)) {
             if (random_key >= keys.len) {
                 random_matches += 1;
