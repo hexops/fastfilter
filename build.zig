@@ -5,12 +5,12 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
 
     _ = b.addModule("fastfilter", .{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
     });
 
     const main_tests = b.addTest(.{
         .name = "fastfilter-tests",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });

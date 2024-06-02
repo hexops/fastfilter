@@ -133,7 +133,7 @@ pub fn main() !void {
             i += 1;
             if (i == args.len) {
                 usage();
-                std.os.exit(1);
+                std.process.exit(1);
             }
             num_trials = try std.fmt.parseUnsigned(usize, args[i], 10);
         }
