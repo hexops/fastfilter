@@ -360,7 +360,7 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
     var random_matches: u64 = 0;
     const trials = 10000000;
     var i: u64 = 0;
-    var rng = std.rand.DefaultPrng.init(0);
+    var rng = std.Random.DefaultPrng.init(0);
     const random = rng.random();
     while (i < trials) : (i += 1) {
         const random_key: u64 = random.uintAtMost(u64, std.math.maxInt(u64));
