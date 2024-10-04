@@ -75,7 +75,7 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     // Perform random matches.
     var random_matches: u64 = 0;
     var i: u64 = 0;
-    var rng = std.rand.DefaultPrng.init(0);
+    var rng = std.Random.DefaultPrng.init(0);
     const random = rng.random();
     timer.reset();
     const randomMatchesTimeStart = timer.lap();
