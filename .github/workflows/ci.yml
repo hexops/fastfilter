@@ -11,7 +11,7 @@ jobs:
       - name: Setup Zig
         run: |
           sudo apt install xz-utils
-          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.13.0-dev.351+64ef45eb0.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.14.0-dev.1710+8ee52f99c.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
       - name: build
         run: zig build
       - name: test
