@@ -326,6 +326,6 @@ Legend:
 * [**Thomas Mueller Graf**](https://github.com/thomasmueller) and [**Daniel Lemire**](https://github.com/lemire) - _for their excellent research into xor filters, xor+ filters, their C implementation, and more._
 * [**Martin Dietzfelbinger**](https://arxiv.org/search/cs?searchtype=author&query=Dietzfelbinger%2C+M) and [**Stefan Walzer**](https://arxiv.org/search/cs?searchtype=author&query=Walzer%2C+S) - _for their excellent research into fuse filters._
 * [**Jim Apple**](https://github.com/jbapple) - _for their C implementation[[1]](https://github.com/FastFilter/xor_singleheader/pull/11) of fuse filters_
-* [**Andrew Gutekanst**](https://github.com/Andoryuuta) - _for providing substantial help in debugging several issues in the Zig implementation._
+* [**@Andoryuuta**](https://github.com/Andoryuuta) - _for providing substantial help in debugging several issues in the Zig implementation._
 
-If it was not for the above people, I ([@slimsag](https://github.com/slimsag)) would not have been able to write this implementation and learn from the excellent [C implementation](https://github.com/FastFilter/xor_singleheader). Please credit the above people if you use this library.
+If it was not for the above people, I ([@emidoots](https://github.com/emidoots)) would not have been able to write this implementation and learn from the excellent [C implementation](https://github.com/FastFilter/xor_singleheader). Please credit the above people if you use this library.
