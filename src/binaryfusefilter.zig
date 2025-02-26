@@ -333,7 +333,7 @@ pub fn BinaryFuse(comptime T: type) type {
             const hh: u64 = hash & ((@as(u64, 1) << 36) - 1);
             // index 0: right shift by 36; index 1: right shift by 18; index 2: no shift
             //
-            // NOTE(slimsag): using u64 here instead of size_it as in upstream C implementation; I think
+            // NOTE: using u64 here instead of size_it as in upstream C implementation; I think
             // that size_t may be incorrect for 32-bit platforms?
             const shift_count = (36 - 18 * index);
             if (shift_count >= 63) {
