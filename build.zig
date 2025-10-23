@@ -6,13 +6,15 @@ pub fn build(b: *std.Build) void {
 
     _ = b.addModule("fastfilter", .{
         .root_source_file = b.path("src/main.zig"),
+        .optimize = optimize,
     });
 
     const main_tests = b.addTest(.{
-        .name = "fastfilter-tests",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.addModule("test", .{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
     const run_main_tests = b.addRunArtifact(main_tests);
 

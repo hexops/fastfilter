@@ -9,18 +9,18 @@ const MeasuredAllocator = @import("MeasuredAllocator.zig");
 fn formatTime(writer: anytype, comptime spec: []const u8, start: u64, end: u64, division: usize) !void {
     const ns = @as(f64, @floatFromInt((end - start) / division));
     if (ns <= time.ns_per_ms) {
-        try std.fmt.format(writer, spec, .{ ns, "ns " });
+        try writer.print(spec, .{ ns, "ns " });
         return;
     }
     if (ns <= time.ns_per_s) {
-        try std.fmt.format(writer, spec, .{ ns / @as(f64, @floatFromInt(time.ns_per_ms)), "ms " });
+        try writer.print(spec, .{ ns / @as(f64, @floatFromInt(time.ns_per_ms)), "ms " });
         return;
     }
     if (ns <= time.ns_per_min) {
-        try std.fmt.format(writer, spec, .{ ns / @as(f64, @floatFromInt(time.ns_per_s)), "s  " });
+        try writer.print(spec, .{ ns / @as(f64, @floatFromInt(time.ns_per_s)), "s  " });
         return;
     }
-    try std.fmt.format(writer, spec, .{ ns / @as(f64, @floatFromInt(time.ns_per_min)), "min" });
+    try writer.print(spec, .{ ns / @as(f64, @floatFromInt(time.ns_per_min)), "min" });
     return;
 }
 
@@ -29,17 +29,17 @@ fn formatBytes(writer: anytype, comptime spec: []const u8, bytes: u64) !void {
     const mib = 1024 * kib;
     const gib = 1024 * mib;
     if (bytes < kib) {
-        try std.fmt.format(writer, spec, .{ bytes, "B  " });
+        try writer.print(spec, .{ bytes, "B  " });
     }
     if (bytes < mib) {
-        try std.fmt.format(writer, spec, .{ bytes / kib, "KiB" });
+        try writer.print(spec, .{ bytes / kib, "KiB" });
         return;
     }
     if (bytes < gib) {
-        try std.fmt.format(writer, spec, .{ bytes / mib, "MiB" });
+        try writer.print(spec, .{ bytes / mib, "MiB" });
         return;
     }
-    try std.fmt.format(writer, spec, .{ bytes / gib, "GiB" });
+    try writer.print(spec, .{ bytes / gib, "GiB" });
     return;
 }
 
@@ -52,7 +52,6 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
     var buildMA = MeasuredAllocator.init(allocator);
     const buildAllocator = buildMA.allocator();
 
-    const stdout = std.io.getStdOut().writer();
     var timer = try Timer.start();
 
     // Initialize filter.
@@ -97,6 +96,10 @@ fn bench(algorithm: []const u8, Filter: anytype, size: usize, trials: usize) !vo
         @panic("sizeInBytes reporting wrong numbers?");
     }
 
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     try stdout.print("| {s: <12} ", .{algorithm});
     try stdout.print("| {: <10} ", .{keys.len});
     try stdout.print("| ", .{});
@@ -139,7 +142,9 @@ pub fn main() !void {
         }
     }
 
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     try stdout.print("| Algorithm    | # of keys  | populate   | contains(k) | false+ prob. | bits per entry | peak populate | filter total |\n", .{});
     try stdout.print("|--------------|------------|------------|-------------|--------------|----------------|---------------|--------------|\n", .{});
     try bench("binaryfuse8", xorfilter.BinaryFuse(u8), 1_000_000, num_trials);

@@ -39,9 +39,11 @@ pub fn Xor(comptime T: type) type {
         pub fn init(allocator: Allocator, size: usize) !Self {
             var capacity = @as(usize, @intFromFloat(32 + 1.23 * @as(f64, @floatFromInt(size))));
             capacity = capacity / 3 * 3;
+            const fingerprints = try allocator.alloc(T, capacity);
+            @memset(fingerprints, 0);
             return Self{
                 .seed = 0,
-                .fingerprints = try allocator.alloc(T, capacity),
+                .fingerprints = fingerprints,
                 .blockLength = capacity / 3,
             };
         }
@@ -334,7 +336,7 @@ const Keyindex = struct {
     index: u32,
 };
 
-fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
+fn xorTest(T: anytype, size: usize) !void {
     const allocator = std.heap.page_allocator;
     var filter = try Xor(T).init(allocator, size);
     defer filter.deinit(allocator);
@@ -347,14 +349,19 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 
     try filter.populate(allocator, keys[0..]);
 
-    try testing.expect(filter.contain(1) == true);
-    try testing.expect(filter.contain(5) == true);
-    try testing.expect(filter.contain(9) == true);
-    try testing.expect(filter.contain(1234) == true);
-    try testing.expectEqual(@as(usize, size_in_bytes), filter.sizeInBytes());
+    try testing.expect(filter.contain(1));
+    try testing.expect(filter.contain(5));
+    try testing.expect(filter.contain(9));
+    try testing.expect(filter.contain(1234));
+
+    var capacity = @as(usize, @intFromFloat(32 + 1.23 * @as(f64, @floatFromInt(size))));
+    capacity = capacity / 3 * 3;
+    const blockLength = capacity / 3;
+    const expected_size = 3 * blockLength * @sizeOf(T) + @sizeOf(Xor(T));
+    try testing.expectEqual(expected_size, filter.sizeInBytes());
 
     for (keys) |key| {
-        try testing.expect(filter.contain(key) == true);
+        try testing.expect(filter.contain(key));
     }
 
     var random_matches: u64 = 0;
@@ -378,15 +385,15 @@ fn xorTest(T: anytype, size: usize, size_in_bytes: usize) !void {
 }
 
 test "xor8" {
-    try xorTest(u8, 10000, 12370);
+    try xorTest(u8, 10000);
 }
 
 test "xor16" {
-    try xorTest(u16, 10000, 24700);
+    try xorTest(u16, 10000);
 }
 
 test "xor20" {
-    try xorTest(u20, 10000, 49360);
+    try xorTest(u20, 10000);
 }
 
 test "xor32" {
@@ -396,7 +403,7 @@ test "xor32" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u32, 1000000, 4920160);
+    try xorTest(u32, 1000000);
 }
 
 test "xor64" {
@@ -406,5 +413,5 @@ test "xor64" {
     //
     // If you have a really beefy machine, it would be cool to try this test with a huge amount of
     // keys and higher `trials` in `xorTest`.
-    try xorTest(u64, 1000000, 9840280);
+    try xorTest(u64, 1000000);
 }

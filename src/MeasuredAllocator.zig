@@ -37,11 +37,17 @@ pub fn allocator(self: *MeasuredAllocator) Allocator {
             .alloc = allocFn,
             .resize = resizeFn,
             .free = freeFn,
+            .remap = remapFn,
         },
     };
 }
 
-fn allocFn(ptr: *anyopaque, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
+fn remapFn(ptr: *anyopaque, memory: []u8, alignment: mem.Alignment, new_len: usize, ret_addr: usize) ?[*]u8 {
+    const self = @as(*MeasuredAllocator, @ptrCast(@alignCast(ptr)));
+    return self.parent_allocator.rawRemap(memory, alignment, new_len, ret_addr);
+}
+
+fn allocFn(ptr: *anyopaque, len: usize, ptr_align: mem.Alignment, ret_addr: usize) ?[*]u8 {
     const self = @as(*MeasuredAllocator, @ptrCast(@alignCast(ptr)));
     const result = self.parent_allocator.rawAlloc(len, ptr_align, ret_addr);
     if (result) |_| {
@@ -51,7 +57,7 @@ fn allocFn(ptr: *anyopaque, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
     return result;
 }
 
-fn resizeFn(ptr: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr: usize) bool {
+fn resizeFn(ptr: *anyopaque, buf: []u8, buf_align: mem.Alignment, new_len: usize, ret_addr: usize) bool {
     const self = @as(*MeasuredAllocator, @ptrCast(@alignCast(ptr)));
     if (self.parent_allocator.rawResize(buf, buf_align, new_len, ret_addr)) {
         self.state.current_memory_usage_bytes -= buf.len - new_len;
@@ -61,7 +67,7 @@ fn resizeFn(ptr: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr:
     return false;
 }
 
-fn freeFn(ptr: *anyopaque, buf: []u8, buf_align: u8, ret_addr: usize) void {
+fn freeFn(ptr: *anyopaque, buf: []u8, buf_align: mem.Alignment, ret_addr: usize) void {
     const self = @as(*MeasuredAllocator, @ptrCast(@alignCast(ptr)));
     self.parent_allocator.rawFree(buf, buf_align, ret_addr);
     self.state.current_memory_usage_bytes -= buf.len;

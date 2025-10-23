@@ -8,10 +8,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup Zig
-        run: |
-          sudo apt install xz-utils
-          sudo sh -c 'wget -c https://pkg.machengine.org/zig/zig-linux-x86_64-0.14.0-dev.2577+271452d22.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.1
       - name: build
         run: zig build
       - name: test
