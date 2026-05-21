@@ -127,7 +127,21 @@ fn usage() void {
 pub fn main() !void {
     var buffer: [1024]u8 = undefined;
     var fixed = std.heap.FixedBufferAllocator.init(buffer[0..]);
-    const args = try std.process.argsAlloc(fixed.allocator());
+    const ArgsList = std.ArrayList([]const u8);
+    var args_list = ArgsList.init(fixed.allocator());
+    defer args_list.deinit();
+
+    // POSIX argv: null-terminated array of C strings
+    var argv_i: usize = 0;
+    while (std.os.argv[argv_i] != null) {
+        const arg = std.mem.span(std.os.argv[argv_i].?);
+        args_list.append(arg) catch |err| {
+            std.debug.print("Failed to append arg: {}\n", .{err});
+            std.process.exit(1);
+        };
+        argv_i += 1;
+    }
+    const args = args_list.items;
 
     var num_trials: usize = 100_000_000;
     var i: usize = 1;
