@@ -147,6 +147,11 @@ If you intend to use a xor filter with datasets of 100m+ keys, there is a possib
 
 The API is generally finalized, but we may make some adjustments as Zig changes or we learn of more idiomatic ways to express things. We will release v1.0 once Zig v1.0 is released.
 
+### **v0.13.0 (Unreleased)**
+- Migrated to Zig 0.16.0
+- Fixed deprecated `std.process.argsAlloc` usage in benchmark (replaced with POSIX `std.os.argv`)
+- Updated `minimum_zig_version` to 0.16.0 in `build.zig.zon`
+
 ### **v0.12.0**
 - Updated to the latest version of Zig 0.15.1
 

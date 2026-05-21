@@ -1,11 +1,11 @@
 .{
     .name = .fastfilter,
-    .version = "1.0.1",
+    .version = "1.3.0",
 
     .dependencies = .{},
     .fingerprint = 0x809515533cb3d42b,
 
-    .minimum_zig_version = "0.15.1",
+    .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",
